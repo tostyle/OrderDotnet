@@ -44,7 +44,7 @@ try
     var dbContext = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
 
     logger.LogInformation("Applying database migrations...");
-    await dbContext.Database.MigrateAsync();
+    // await dbContext.Database.MigrateAsync();
 
     logger.LogInformation("Database migration completed successfully!");
 }

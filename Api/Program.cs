@@ -1,5 +1,5 @@
 using Serilog;
-using Application.Services;
+using Application.Extensions;
 using Infrastructure.Extensions;
 using Microsoft.Extensions.Hosting;
 
@@ -26,7 +26,7 @@ try
     builder.Services.AddOpenApi();
 
     // Add Application Services
-    builder.Services.AddScoped<OrderService>();
+    builder.Services.AddApplication();
 
     // Add Infrastructure Services (Database, Temporal, etc.)
     builder.Services.AddInfrastructure(builder.Configuration);
