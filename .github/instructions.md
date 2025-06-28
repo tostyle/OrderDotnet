@@ -1,0 +1,30 @@
+# Overview
+- code should be writtern in clean artchtecture style
+- code should be written in dotnet c#
+# Instructions for Copilot
+- Use the provided prefix and suffix code snippets to complete the code.
+- Ensure that the code is modular and follows SOLID principles
+- Use appropriate naming conventions for classes, methods, and variables
+- Include comments to explain complex logic or important decisions
+- Write unit tests for critical components
+- Use dependency injection for better testability and maintainability
+- Follow the DRY (Don't Repeat Yourself) principle to avoid code duplication
+- Ensure that the code is well-structured and easy to read
+- Use async/await for asynchronous operations where applicable
+- Handle exceptions gracefully and log errors appropriately
+- Use appropriate design patterns where applicable (e.g., Repository, Factory, etc.)
+- Ensure that the code is compatible with .NET 6 or later
+- Use modern C# features (e.g., records, pattern matching) where appropriate
+- Ensure that the code is secure and follows best practices for security
+- Use appropriate namespaces and folder structure to organize the code
+- Ensure that the code is performant and optimized for speed
+- Use appropriate data structures and algorithms for the task at hand
+- Ensure that the code is scalable and can handle increased load
+- Use appropriate logging and monitoring to track application performance and errors    
+- Use Entity Framework Core for data access    
+- Use Temporal for workflow management
+- Use Extension methods for reusable functionality
+- Use FluentValidation for input validation
+- Use Opentelemetry for distributed tracing, metrics, and logging
+- Domain should be pure and not depend on any external libraries
+- Use postgres as the database

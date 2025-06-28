@@ -1,0 +1,71 @@
+# Ignore build results
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code settings
+.vscode/
+
+# Rider settings
+.idea/
+*.sln.iml
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# DotCover
+*.dotCover
+
+# NCrunch
+*.ncrunch*
+.*crunch*.local.xml
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# IIS Express
+. vs/
+.vs/
+
+# Logs
+*.log
+
+# Test results
+TestResults/
+
+# NuGet
+*.nupkg
+# The packages folder can be ignored if you use PackageReference
+packages/
+# except build/, which is used as an MSBuild target.
+!packages/build/
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# Dotnet tool restore
+.dotnet_tool/
+
+# Local database
+*.mdf
+*.ldf
+*.ndf
+
+# Others
+*.dbmdl
+*.dbproj.schemaview
+*.pfx
+*.publishsettings
+
+# Existing entry
+Data/
+Api/log/
