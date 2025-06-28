@@ -73,6 +73,28 @@ public record PaymentMethod
     /// </summary>
     public static PaymentMethod Cash() => new(PaymentMethodType.Cash);
 
+    /// <summary>
+    /// Creates PaymentMethod from string representation
+    /// Business logic encapsulated in domain layer
+    /// </summary>
+    public static PaymentMethod FromString(string paymentMethodType)
+    {
+        if (string.IsNullOrWhiteSpace(paymentMethodType))
+        {
+            throw new ArgumentException("Payment method type cannot be null or empty", nameof(paymentMethodType));
+        }
+
+        return paymentMethodType.ToLowerInvariant().Trim() switch
+        {
+            "creditcard" or "credit_card" or "credit-card" => CreditCard("0000", "Unknown"),
+            "debitcard" or "debit_card" or "debit-card" => DebitCard("0000", "Unknown"),
+            "banktransfer" or "bank_transfer" or "bank-transfer" => BankTransfer("Unknown Bank"),
+            "digitalwallet" or "digital_wallet" or "digital-wallet" or "wallet" => DigitalWallet("Unknown Wallet"),
+            "cash" => Cash(),
+            _ => throw new ArgumentException($"Unsupported payment method type: {paymentMethodType}", nameof(paymentMethodType))
+        };
+    }
+
     public override string ToString()
     {
         return Type switch

@@ -6,22 +6,12 @@ using Application.DTOs;
 
 namespace Application.Services;
 
-/// <summary>
-/// Service interface for order operations as specified in 3rd iteration
-/// </summary>
-public interface IOrderService
-{
-    Task<InitialOrderResponse> InitialOrderAsync(InitialOrderRequest request, CancellationToken cancellationToken = default);
-    Task<ReserveStockResponse> ReserveStockAsync(ReserveStockRequest request, CancellationToken cancellationToken = default);
-    Task<LoyaltyTransactionResponse> EarnLoyaltyAsync(EarnLoyaltyRequest request, CancellationToken cancellationToken = default);
-    Task<LoyaltyTransactionResponse> BurnLoyaltyAsync(BurnLoyaltyRequest request, CancellationToken cancellationToken = default);
-    Task<ProcessPaymentResponse> ProcessPaymentAsync(ProcessPaymentRequest request, CancellationToken cancellationToken = default);
-}
+
 
 /// <summary>
 /// Implementation of OrderService for 3rd iteration requirements
 /// </summary>
-public class OrderService : IOrderService
+public class OrderService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IOrderPaymentRepository _paymentRepository;
@@ -42,25 +32,45 @@ public class OrderService : IOrderService
 
     /// <summary>
     /// 1. InitialOrder - create DTO, init Order, OrderPayment with Payment Pending status and save it to each repo model
+    /// Idempotent by ReferenceId - returns existing order if already exists
     /// </summary>
     public async Task<InitialOrderResponse> InitialOrderAsync(InitialOrderRequest request, CancellationToken cancellationToken = default)
     {
-        // Create new order
+        if (string.IsNullOrWhiteSpace(request.ReferenceId))
+        {
+            throw new ArgumentException("ReferenceId is required for idempotent operation", nameof(request.ReferenceId));
+        }
+
+        // Check if order with ReferenceId already exists (idempotency check)
+        var existingOrder = await _orderRepository.GetByReferenceIdAsync(request.ReferenceId, cancellationToken);
+
+        if (existingOrder != null)
+        {
+            // Return existing order data (idempotent behavior)
+            var existingPayments = await _paymentRepository.GetByOrderIdAsync(existingOrder.Id, cancellationToken);
+            var firstPayment = existingPayments.FirstOrDefault();
+
+            if (firstPayment == null)
+            {
+                throw new InvalidOperationException($"Order {existingOrder.ReferenceId} exists but has no payments");
+            }
+
+            return new InitialOrderResponse(
+                OrderId: existingOrder.Id.Value,
+                ReferenceId: existingOrder.ReferenceId,
+                PaymentId: firstPayment.Id.Value,
+                PaymentStatus: firstPayment.Status.ToString()
+            );
+        }
+
+        // Create new order if not exists
         var order = Order.Create(request.ReferenceId);
 
         // Create OrderAggregate to manage business logic
         var orderAggregate = OrderAggregate.FromExistingOrder(order);
 
-        // Process initial payment with pending status
-        var paymentMethod = request.PaymentMethod.ToLowerInvariant() switch
-        {
-            "creditcard" => PaymentMethod.CreditCard("0000", "Unknown"),
-            "debitcard" => PaymentMethod.DebitCard("0000", "Unknown"),
-            "banktransfer" => PaymentMethod.BankTransfer("Unknown Bank"),
-            "digitalwallet" => PaymentMethod.DigitalWallet("Unknown Wallet"),
-            "cash" => PaymentMethod.Cash(),
-            _ => PaymentMethod.CreditCard("0000", "Unknown")
-        };
+        // Use domain factory method for payment method creation
+        var paymentMethod = PaymentMethod.FromString(request.PaymentMethod);
         var paymentId = orderAggregate.ProcessPayment(paymentMethod, request.PaymentAmount, request.Currency);
 
         // Get the payment entity from the aggregate
