@@ -16,6 +16,8 @@ public static class OrderMappingExtensions
     {
         return new OrderDto(
             Id: order.Id.Value,
+            ReferenceId: order.ReferenceId,
+            OrderState: order.OrderState.ToString(),
             CreatedAt: order.CreatedAt,
             UpdatedAt: order.UpdatedAt,
             Version: order.Version,

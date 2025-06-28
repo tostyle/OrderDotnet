@@ -52,7 +52,7 @@ public class Order
     /// <summary>
     /// Creates a new order in PENDING state
     /// </summary>
-    public static Order Create()
+    public static Order Create(string? referenceId = null)
     {
         var orderId = OrderId.New();
         var now = DateTime.UtcNow;
@@ -63,11 +63,31 @@ public class Order
             OrderState = OrderState.Initial,
             CreatedAt = now,
             UpdatedAt = now,
-            Version = 1
+            Version = 1,
+            ReferenceId = referenceId ?? Guid.NewGuid().ToString()
         };
 
-
         return order;
+    }
+
+    /// <summary>
+    /// Sets the workflow ID for temporal tracking
+    /// </summary>
+    public void SetWorkflowId(string workflowId)
+    {
+        WorkflowId = workflowId ?? throw new ArgumentNullException(nameof(workflowId));
+        UpdatedAt = DateTime.UtcNow;
+        Version++;
+    }
+
+    /// <summary>
+    /// Sets the reference ID for external system tracking
+    /// </summary>
+    public void SetReferenceId(string referenceId)
+    {
+        ReferenceId = referenceId ?? throw new ArgumentNullException(nameof(referenceId));
+        UpdatedAt = DateTime.UtcNow;
+        Version++;
     }
 
 

@@ -56,6 +56,12 @@ public class OrderRepository : IOrderRepository
             .FirstOrDefaultAsync(o => o.WorkflowId == workflowId, cancellationToken);
     }
 
+    public async Task<Order?> GetByReferenceIdAsync(string referenceId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Orders
+            .FirstOrDefaultAsync(o => o.ReferenceId == referenceId, cancellationToken);
+    }
+
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return await _context.SaveChangesAsync(cancellationToken);

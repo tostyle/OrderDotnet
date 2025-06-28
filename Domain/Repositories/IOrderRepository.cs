@@ -39,6 +39,11 @@ public interface IOrderRepository
     Task<Order?> GetByWorkflowIdAsync(string workflowId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets an order by its reference ID
+    /// </summary>
+    Task<Order?> GetByReferenceIdAsync(string referenceId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Saves all changes to the underlying data store
     /// </summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

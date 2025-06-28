@@ -41,8 +41,15 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasMaxLength(255)
             .IsRequired(false);
 
+        // Configure ReferenceId
+        builder.Property(o => o.ReferenceId)
+            .HasMaxLength(255)
+            .IsRequired();
+
         // Index for better performance
         builder.HasIndex(o => o.WorkflowId);
+        builder.HasIndex(o => o.ReferenceId)
+            .IsUnique(); // ReferenceId should be unique
         builder.HasIndex(o => o.CreatedAt);
     }
 }
