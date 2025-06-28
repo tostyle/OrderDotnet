@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Application.Services;
+using Application.UseCases;
 
 namespace Application.Extensions;
 
@@ -17,7 +18,10 @@ public static class ApplicationServiceExtensions
     {
         // Register OrderService with scoped lifetime
         services.AddScoped<OrderService>();
-        
+
+        // Register Use Cases with scoped lifetime
+        services.AddScoped<InitialOrderUseCase>();
+
         return services;
     }
 }

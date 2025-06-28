@@ -66,6 +66,24 @@ _ReSharper*/
 *.pfx
 *.publishsettings
 
+# Launch settings (contains sensitive configuration)
+**/Properties/launchSettings.json
+launchSettings.json
+
+
+
+# Environment-specific appsettings (may contain sensitive data)
+# Keep appsettings.json (base configuration) in git
+# Exclude environment-specific ones that may contain secrets
+**/appsettings.Local.json
+**/appsettings.Production.json
+**/appsettings.Staging.json
+# You may want to exclude Development.json if it contains sensitive local dev data
+# appsettings.Development.json
+
+# User Secrets (if using dotnet user-secrets)
+secrets.json
+
 # Existing entry
 Data/
 Api/log/

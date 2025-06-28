@@ -1,10 +1,11 @@
 using Microsoft.Extensions.Logging;
+using Temporalio.Activities;
 
 namespace Workflow.Activities;
 
 /// <summary>
-/// Placeholder activities for order processing workflow
-/// This will be fully implemented once Temporal server is available and APIs are verified
+/// Activities for order processing workflow
+/// All activities are marked as TODO and will be implemented later
 /// </summary>
 public class OrderActivities
 {
@@ -16,68 +17,107 @@ public class OrderActivities
     }
 
     /// <summary>
-    /// Activity to process an order (placeholder)
+    /// Activity 1: Start Order Workflow with workflowId and orderId
+    /// TODO: Implement actual workflow initialization logic
     /// </summary>
-    public async Task<bool> ProcessOrderAsync(Guid orderId)
+    [Activity]
+    public async Task<bool> StartOrderWorkflowAsync(string workflowId, Guid orderId)
     {
-        _logger.LogInformation("Processing order {OrderId}", orderId);
+        _logger.LogInformation("TODO: StartOrderWorkflow - WorkflowId: {WorkflowId}, OrderId: {OrderId}", workflowId, orderId);
 
-        try
-        {
-            // Simulate order processing
-            await Task.Delay(TimeSpan.FromSeconds(2));
+        // TODO: Implement workflow initialization
+        await Task.Delay(100); // Placeholder
 
-            _logger.LogInformation("Order {OrderId} processed successfully", orderId);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing order {OrderId}", orderId);
-            throw;
-        }
+        return true;
     }
 
     /// <summary>
-    /// Activity to schedule delivery (placeholder)
+    /// Activity 2: Reserve Stock
+    /// TODO: Implement stock reservation logic
     /// </summary>
-    public async Task<bool> ScheduleDeliveryAsync(Guid orderId)
+    [Activity]
+    public async Task<bool> ReserveStockAsync(Guid orderId)
     {
-        _logger.LogInformation("Scheduling delivery for order {OrderId}", orderId);
+        _logger.LogInformation("TODO: ReserveStock for OrderId: {OrderId}", orderId);
 
-        try
-        {
-            // Simulate delivery scheduling
-            await Task.Delay(TimeSpan.FromSeconds(1));
+        // TODO: Implement stock reservation
+        await Task.Delay(100); // Placeholder
 
-            _logger.LogInformation("Delivery scheduled for order {OrderId}", orderId);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error scheduling delivery for order {OrderId}", orderId);
-            throw;
-        }
+        return true;
     }
 
     /// <summary>
-    /// Activity to cancel an order (placeholder)
+    /// Activity 3: Burn Loyalty Transaction
+    /// TODO: Implement loyalty point burning logic
     /// </summary>
-    public async Task<bool> CancelOrderAsync(Guid orderId)
+    [Activity]
+    public async Task<bool> BurnLoyaltyTransactionAsync(Guid orderId)
     {
-        _logger.LogInformation("Cancelling order {OrderId}", orderId);
+        _logger.LogInformation("TODO: BurnLoyaltyTransaction for OrderId: {OrderId}", orderId);
 
-        try
-        {
-            // Simulate order cancellation
-            await Task.Delay(TimeSpan.FromSeconds(1));
+        // TODO: Implement loyalty point burning
+        await Task.Delay(100); // Placeholder
 
-            _logger.LogInformation("Order {OrderId} cancelled successfully", orderId);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error cancelling order {OrderId}", orderId);
-            throw;
-        }
+        return true;
+    }
+
+    /// <summary>
+    /// Activity 4: Earn Loyalty Transaction
+    /// TODO: Implement loyalty point earning logic
+    /// </summary>
+    [Activity]
+    public async Task<bool> EarnLoyaltyTransactionAsync(Guid orderId)
+    {
+        _logger.LogInformation("TODO: EarnLoyaltyTransaction for OrderId: {OrderId}", orderId);
+
+        // TODO: Implement loyalty point earning
+        await Task.Delay(100); // Placeholder
+
+        return true;
+    }
+
+    /// <summary>
+    /// Activity 5: Process Payment
+    /// TODO: Implement payment processing logic
+    /// </summary>
+    [Activity]
+    public async Task<bool> ProcessPaymentAsync(Guid orderId)
+    {
+        _logger.LogInformation("TODO: ProcessPayment for OrderId: {OrderId}", orderId);
+
+        // TODO: Implement payment processing
+        await Task.Delay(100); // Placeholder
+
+        return true;
+    }
+
+    /// <summary>
+    /// Activity 6: Complete Cart
+    /// TODO: Implement cart completion logic
+    /// </summary>
+    [Activity]
+    public async Task<bool> CompletedCartAsync(Guid orderId)
+    {
+        _logger.LogInformation("TODO: CompletedCart for OrderId: {OrderId}", orderId);
+
+        // TODO: Implement cart completion
+        await Task.Delay(100); // Placeholder
+
+        return true;
+    }
+
+    /// <summary>
+    /// Activity 7: Get Order Detail
+    /// TODO: Implement order detail retrieval logic
+    /// </summary>
+    [Activity]
+    public async Task<string> GetOrderDetailAsync(Guid orderId)
+    {
+        _logger.LogInformation("TODO: GetOrderDetail for OrderId: {OrderId}", orderId);
+
+        // TODO: Implement order detail retrieval
+        await Task.Delay(100); // Placeholder
+
+        return $"Order details for {orderId} - TODO: Implement";
     }
 }
