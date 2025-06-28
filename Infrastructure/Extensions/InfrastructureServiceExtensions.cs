@@ -14,11 +14,10 @@ namespace Infrastructure.Extensions;
 public static class InfrastructureServiceExtensions
 {
     /// <summary>
-    /// Registers all Infrastructure services in the DI container
+    /// Registers only the database context in the DI container
     /// </summary>
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
     {
-        // Register Database Context
         services.AddDbContext<OrderDbContext>(options =>
         {
             var connectionString = configuration.GetConnectionString("Postgresdb")
@@ -26,6 +25,16 @@ public static class InfrastructureServiceExtensions
             Console.WriteLine($"Connection string: {connectionString}");
             options.UseNpgsql(connectionString);
         });
+        return services;
+    }
+
+    /// <summary>
+    /// Registers all Infrastructure services in the DI container
+    /// </summary>
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    {
+        // Register Database Context
+        services.AddDatabase(configuration);
 
         // Register Repositories
         services.AddScoped<IOrderRepository, OrderRepository>();

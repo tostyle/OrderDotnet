@@ -1,12 +1,7 @@
 using Serilog;
-using FluentValidation;
 using Application.Services;
-using Application.Commands;
-using Application.Queries;
-using Application.Validators;
 using Infrastructure.Extensions;
 using Microsoft.Extensions.Hosting;
-using MediatR;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -30,14 +25,8 @@ try
     // Add OpenAPI/Swagger
     builder.Services.AddOpenApi();
 
-    // Add MediatR
-    builder.Services.AddMediatR(typeof(CreateOrderCommand).Assembly);
-
-    // Add FluentValidation
-    builder.Services.AddValidatorsFromAssemblyContaining<CancelOrderCommandValidator>();
-
     // Add Application Services
-    builder.Services.AddScoped<IOrderApplicationService, OrderApplicationService>();
+    builder.Services.AddScoped<OrderService>();
 
     // Add Infrastructure Services (Database, Temporal, etc.)
     builder.Services.AddInfrastructure(builder.Configuration);
@@ -82,11 +71,7 @@ try
 
     Log.Information("Order Management API starting up...");
     Log.Information("Available endpoints:");
-    Log.Information("  POST   /api/orders           - Create new order");
-    Log.Information("  GET    /api/orders/{{id}}      - Get order by ID");
-    Log.Information("  GET    /api/orders           - Get all orders");
-    Log.Information("  PUT    /api/orders/{{id}}/state - Update order state");
-    Log.Information("  DELETE /api/orders/{{id}}      - Cancel order");
+    Log.Information("  API endpoints have been removed - controller is empty");
 
     await app.RunAsync();
 }
