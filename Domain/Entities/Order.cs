@@ -50,6 +50,11 @@ public class Order
     public virtual ICollection<OrderStock> StockReservations { get; set; } = new List<OrderStock>();
 
     /// <summary>
+    /// Navigation property for related order items
+    /// </summary>
+    public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+
+    /// <summary>
     /// Navigation property for related payment
     /// </summary>
     public virtual OrderPayment? Payment { get; set; }

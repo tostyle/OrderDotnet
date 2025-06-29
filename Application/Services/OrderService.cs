@@ -17,79 +17,20 @@ public class OrderService
     private readonly IOrderPaymentRepository _paymentRepository;
     private readonly IOrderLoyaltyRepository _loyaltyRepository;
     private readonly IOrderStockRepository _stockRepository;
+    private readonly IOrderItemRepository _orderItemRepository;
 
     public OrderService(
         IOrderRepository orderRepository,
         IOrderPaymentRepository paymentRepository,
         IOrderLoyaltyRepository loyaltyRepository,
-        IOrderStockRepository stockRepository)
+        IOrderStockRepository stockRepository,
+        IOrderItemRepository orderItemRepository)
     {
         _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
         _paymentRepository = paymentRepository ?? throw new ArgumentNullException(nameof(paymentRepository));
         _loyaltyRepository = loyaltyRepository ?? throw new ArgumentNullException(nameof(loyaltyRepository));
         _stockRepository = stockRepository ?? throw new ArgumentNullException(nameof(stockRepository));
-    }
-
-    /// <summary>
-    /// 1. InitialOrder - create DTO, init Order, OrderPayment with Payment Pending status and save it to each repo model
-    /// Idempotent by ReferenceId - returns existing order if already exists
-    /// </summary>
-    public async Task<InitialOrderResponse> InitialOrderAsync(InitialOrderRequest request, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(request.ReferenceId))
-        {
-            throw new ArgumentException("ReferenceId is required for idempotent operation", nameof(request.ReferenceId));
-        }
-
-        // Check if order with ReferenceId already exists (idempotency check)
-        var existingOrder = await _orderRepository.GetByReferenceIdAsync(request.ReferenceId, cancellationToken);
-
-        if (existingOrder != null)
-        {
-            // Return existing order data (idempotent behavior)
-            var existingPayments = await _paymentRepository.GetByOrderIdAsync(existingOrder.Id, cancellationToken);
-            var firstPayment = existingPayments.FirstOrDefault();
-
-            if (firstPayment == null)
-            {
-                throw new InvalidOperationException($"Order {existingOrder.ReferenceId} exists but has no payments");
-            }
-
-            return new InitialOrderResponse(
-                OrderId: existingOrder.Id.Value,
-                ReferenceId: existingOrder.ReferenceId,
-                PaymentId: firstPayment.Id.Value,
-                PaymentStatus: firstPayment.Status.ToString()
-            );
-        }
-
-        // Create new order if not exists
-        var order = Order.Create(request.ReferenceId);
-
-        // Create OrderAggregate to manage business logic
-        var orderAggregate = OrderAggregate.FromExistingOrder(order);
-
-        // Use domain factory method for payment method creation
-        var paymentMethod = PaymentMethod.FromString(request.PaymentMethod);
-        var paymentId = orderAggregate.ProcessPayment(paymentMethod, request.PaymentAmount, request.Currency);
-
-        // Get the payment entity from the aggregate
-        var payment = orderAggregate.Payments.First(p => p.Id == paymentId);
-
-        // Save order to repository
-        await _orderRepository.AddAsync(order, cancellationToken);
-        await _orderRepository.SaveChangesAsync(cancellationToken);
-
-        // Save payment to repository
-        await _paymentRepository.AddAsync(payment, cancellationToken);
-        await _paymentRepository.SaveChangesAsync(cancellationToken);
-
-        return new InitialOrderResponse(
-            OrderId: order.Id.Value,
-            ReferenceId: order.ReferenceId,
-            PaymentId: payment.Id.Value,
-            PaymentStatus: payment.Status.ToString()
-        );
+        _orderItemRepository = orderItemRepository ?? throw new ArgumentNullException(nameof(orderItemRepository));
     }
 
     /// <summary>
@@ -375,6 +316,80 @@ public class OrderService
         }
 
         return DetailedOrderDto.FromOrder(order);
+    }
+
+    /// <summary>
+    /// AddOrderItem - adds an item to an existing order
+    /// </summary>
+    public async Task<OrderItemResponse> AddOrderItemAsync(AddOrderItemRequest request, CancellationToken cancellationToken = default)
+    {
+        // Validate order exists
+        var order = await _orderRepository.GetByIdAsync(OrderId.From(request.OrderId), cancellationToken);
+        if (order == null)
+        {
+            throw new InvalidOperationException($"Order with ID {request.OrderId} not found");
+        }
+
+        // Create the order item
+        var orderItem = OrderItem.Create(
+            OrderId.From(request.OrderId),
+            ProductId.From(request.ProductId),
+            request.Quantity,
+            request.NetAmount,
+            request.GrossAmount,
+            request.Currency
+        );
+
+        // Save the order item
+        await _orderItemRepository.AddAsync(orderItem, cancellationToken);
+        await _orderItemRepository.SaveChangesAsync(cancellationToken);
+
+        return OrderItemResponse.FromOrderItem(orderItem);
+    }
+
+    /// <summary>
+    /// UpdateOrderItem - updates quantity and amounts for an order item
+    /// </summary>
+    public async Task<OrderItemResponse> UpdateOrderItemAsync(UpdateOrderItemRequest request, CancellationToken cancellationToken = default)
+    {
+        var orderItem = await _orderItemRepository.GetByIdAsync(OrderItemId.From(request.OrderItemId), cancellationToken);
+        if (orderItem == null)
+        {
+            throw new InvalidOperationException($"OrderItem with ID {request.OrderItemId} not found");
+        }
+
+        // Update the order item
+        orderItem.UpdateQuantityAndAmounts(request.Quantity, request.NetAmount, request.GrossAmount);
+
+        // Save changes
+        await _orderItemRepository.UpdateAsync(orderItem, cancellationToken);
+        await _orderItemRepository.SaveChangesAsync(cancellationToken);
+
+        return OrderItemResponse.FromOrderItem(orderItem);
+    }
+
+    /// <summary>
+    /// RemoveOrderItem - removes an order item from an order
+    /// </summary>
+    public async Task RemoveOrderItemAsync(Guid orderItemId, CancellationToken cancellationToken = default)
+    {
+        var orderItem = await _orderItemRepository.GetByIdAsync(OrderItemId.From(orderItemId), cancellationToken);
+        if (orderItem == null)
+        {
+            throw new InvalidOperationException($"OrderItem with ID {orderItemId} not found");
+        }
+
+        await _orderItemRepository.RemoveAsync(orderItem, cancellationToken);
+        await _orderItemRepository.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// GetOrderItems - gets all items for a specific order
+    /// </summary>
+    public async Task<IEnumerable<OrderItemResponse>> GetOrderItemsAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        var orderItems = await _orderItemRepository.GetByOrderIdAsync(OrderId.From(orderId), cancellationToken);
+        return orderItems.Select(OrderItemResponse.FromOrderItem);
     }
 
 }

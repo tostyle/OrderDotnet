@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Temporalio.Client;
 using Domain.Repositories;
+using Domain.Services;
 using Infrastructure.Data;
 using Infrastructure.Repositories;
 
@@ -22,13 +23,14 @@ public static class InfrastructureServiceExtensions
         {
             var connectionString = configuration.GetConnectionString("Postgresdb")
                 ?? "Host=localhost;Port=5051;Database=OrderDb;Username=postgres;Password=postgres";
-            Console.WriteLine($"Connection string: {connectionString}");
+            // Console.WriteLine($"Connection string: {connectionString}");
             options.UseNpgsql(connectionString);
         });
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderPaymentRepository, OrderPaymentRepository>();
         services.AddScoped<IOrderStockRepository, OrderStockRepository>();
         services.AddScoped<IOrderLoyaltyRepository, OrderLoyaltyRepository>();
+        services.AddScoped<IOrderItemRepository, OrderItemRepository>();
         return services;
     }
 

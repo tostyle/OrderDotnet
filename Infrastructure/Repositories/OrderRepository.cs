@@ -73,6 +73,7 @@ public class OrderRepository : IOrderRepository
             .Include(o => o.Payment)
             .Include(o => o.LoyaltyTransactions)
             .Include(o => o.StockReservations)
+            .Include(o => o.OrderItems)
             .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
     }
 
@@ -82,6 +83,7 @@ public class OrderRepository : IOrderRepository
             .Include(o => o.Payment)
             .Include(o => o.LoyaltyTransactions)
             .Include(o => o.StockReservations)
+            .Include(o => o.OrderItems)
             .FirstOrDefaultAsync(o => o.ReferenceId == referenceId, cancellationToken);
     }
 }

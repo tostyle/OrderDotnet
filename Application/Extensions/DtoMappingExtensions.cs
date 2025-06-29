@@ -49,23 +49,7 @@ public static class DtoMappingExtensions
         );
     }
 
-    /// <summary>
-    /// Creates a new OrderAggregate from an InitialOrderRequest DTO.
-    /// This method encapsulates the initial creation logic, including the first payment.
-    /// It leverages the OrderAggregate to ensure all business rules are enforced.
-    /// </summary>
-    public static OrderAggregate ToOrderAggregate(this InitialOrderRequest request)
-    {
-        // Create a new order with the provided reference ID
-        var order = Order.Create(request.ReferenceId);
-        var orderAggregate = OrderAggregate.FromExistingOrder(order);
 
-        // Use the aggregate to process the initial payment, ensuring payment rules are met
-        var paymentMethod = PaymentMethod.FromString(request.PaymentMethod);
-        orderAggregate.ProcessPayment(paymentMethod, request.PaymentAmount, request.Currency);
-
-        return orderAggregate;
-    }
 
     /// <summary>
     /// Creates a new Order entity from an InitialOrderRequest DTO.

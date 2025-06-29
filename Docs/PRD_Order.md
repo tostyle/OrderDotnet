@@ -46,3 +46,25 @@ implement application layer
 2. ReserveStock - create DTO, find Order By Id and then call revervestock method in OrderAggregate save to repository
 3. BurnLoyaly, EarnLoyalty make method calculate and save to repo
 4. Proces Payment update OrderPayment to Status Completed
+---
+# 4th iterate
+implement OrderItem models
+fields
+- productId, quantity, netAmount, grossAmount, currency = THB
+- Order 1 to many to OrderItem
+- implement IRepository
+- Get Order Detail need to Include OrderItem too
+- implement service
+--- 
+# 5th Iterate
+## Spec of InitialOrderAsync
+- refactor InitialOrderAsync in order service
+- change DTO like this 
+    - referenceId
+    - orderItems [{productId, quantity, netAmount, grossAmount, currency}]
+    - paymentMethod
+- flows
+1. create order first by refernce Id
+2. create order items
+3. create order payment with payment method and set status to pending
+4. create temporal workflow

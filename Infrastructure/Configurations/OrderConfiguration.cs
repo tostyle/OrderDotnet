@@ -60,6 +60,12 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasForeignKey(s => s.OrderId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // One-to-many relationship with OrderItems
+        builder.HasMany(o => o.OrderItems)
+            .WithOne(oi => oi.Order)
+            .HasForeignKey(oi => oi.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // One-to-one relationship with OrderPayment
         builder.HasOne(o => o.Payment)
             .WithOne(p => p.Order)

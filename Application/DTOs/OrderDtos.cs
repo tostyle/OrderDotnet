@@ -44,13 +44,23 @@ public record OrderDto(
 public record CreateOrderRequest();
 
 /// <summary>
-/// Request DTO for initializing a new order
+/// Request DTO for initializing a new order - 5th Iteration
 /// </summary>
 public record InitialOrderRequest(
-    string? ReferenceId = null,
-    string PaymentMethod = "CreditCard",
-    decimal PaymentAmount = 0.0m,
-    string Currency = "USD"
+    string ReferenceId,
+    IEnumerable<InitialOrderItemRequest> OrderItems,
+    string PaymentMethod
+);
+
+/// <summary>
+/// Request DTO for order items in initial order creation
+/// </summary>
+public record InitialOrderItemRequest(
+    Guid ProductId,
+    int Quantity,
+    decimal NetAmount,
+    decimal GrossAmount,
+    string Currency = "THB"
 );
 
 /// <summary>
@@ -275,7 +285,8 @@ public record DetailedOrderDto(
     string? WorkflowId,
     OrderPaymentDto? Payment,
     IEnumerable<LoyaltyTransactionDto> LoyaltyTransactions,
-    IEnumerable<StockReservationDto> StockReservations
+    IEnumerable<StockReservationDto> StockReservations,
+    IEnumerable<OrderItemDto> OrderItems
 )
 {
     /// <summary>
@@ -298,9 +309,20 @@ public record DetailedOrderDto(
             WorkflowId: order.WorkflowId,
             Payment: order.Payment != null ? OrderPaymentDto.FromOrderPayment(order.Payment) : null,
             LoyaltyTransactions: order.LoyaltyTransactions?.Select(LoyaltyTransactionDto.FromOrderLoyalty) ?? Enumerable.Empty<LoyaltyTransactionDto>(),
-            StockReservations: order.StockReservations?.Select(StockReservationDto.FromOrderStock) ?? Enumerable.Empty<StockReservationDto>()
+            StockReservations: order.StockReservations?.Select(StockReservationDto.FromOrderStock) ?? Enumerable.Empty<StockReservationDto>(),
+            OrderItems: order.OrderItems?.Select(OrderItemDto.FromOrderItem) ?? Enumerable.Empty<OrderItemDto>()
         );
     }
+
+    /// <summary>
+    /// Calculates the total net amount for all order items
+    /// </summary>
+    public decimal TotalNetAmount => OrderItems.Sum(oi => oi.TotalNetAmount);
+
+    /// <summary>
+    /// Calculates the total gross amount for all order items
+    /// </summary>
+    public decimal TotalGrossAmount => OrderItems.Sum(oi => oi.TotalGrossAmount);
 }
 
 /// <summary>
@@ -402,6 +424,110 @@ public record StockReservationDto(
             ExpirationDate: stock.ExpirationDate,
             Status: stock.Status.ToString(),
             ExternalReservationId: stock.ExternalReservationId
+        );
+    }
+}
+
+/// <summary>
+/// DTO for order item information
+/// </summary>
+public record OrderItemDto(
+    Guid Id,
+    Guid ProductId,
+    int Quantity,
+    decimal NetAmount,
+    decimal GrossAmount,
+    string Currency
+)
+{
+    /// <summary>
+    /// Creates an OrderItemDto from a Domain OrderItem entity
+    /// </summary>
+    /// <param name="orderItem">The domain OrderItem entity</param>
+    /// <returns>OrderItemDto mapped from the domain entity</returns>
+    public static OrderItemDto FromOrderItem(Domain.Entities.OrderItem orderItem)
+    {
+        if (orderItem == null)
+            throw new ArgumentNullException(nameof(orderItem));
+
+        return new OrderItemDto(
+            Id: orderItem.Id.Value,
+            ProductId: orderItem.ProductId.Value,
+            Quantity: orderItem.Quantity,
+            NetAmount: orderItem.NetAmount,
+            GrossAmount: orderItem.GrossAmount,
+            Currency: orderItem.Currency
+        );
+    }
+
+    /// <summary>
+    /// Calculates the total net amount for this item
+    /// </summary>
+    public decimal TotalNetAmount => Quantity * NetAmount;
+
+    /// <summary>
+    /// Calculates the total gross amount for this item
+    /// </summary>
+    public decimal TotalGrossAmount => Quantity * GrossAmount;
+}
+
+/// <summary>
+/// Request DTO for adding order items
+/// </summary>
+public record AddOrderItemRequest(
+    Guid OrderId,
+    Guid ProductId,
+    int Quantity,
+    decimal NetAmount,
+    decimal GrossAmount,
+    string Currency = "THB"
+);
+
+/// <summary>
+/// Request DTO for updating order items
+/// </summary>
+public record UpdateOrderItemRequest(
+    Guid OrderItemId,
+    int Quantity,
+    decimal NetAmount,
+    decimal GrossAmount
+);
+
+/// <summary>
+/// Response DTO for order item operations
+/// </summary>
+public record OrderItemResponse(
+    Guid Id,
+    Guid OrderId,
+    Guid ProductId,
+    int Quantity,
+    decimal NetAmount,
+    decimal GrossAmount,
+    string Currency,
+    decimal TotalNetAmount,
+    decimal TotalGrossAmount
+)
+{
+    /// <summary>
+    /// Creates an OrderItemResponse from a Domain OrderItem entity
+    /// </summary>
+    /// <param name="orderItem">The domain OrderItem entity</param>
+    /// <returns>OrderItemResponse mapped from the domain entity</returns>
+    public static OrderItemResponse FromOrderItem(Domain.Entities.OrderItem orderItem)
+    {
+        if (orderItem == null)
+            throw new ArgumentNullException(nameof(orderItem));
+
+        return new OrderItemResponse(
+            Id: orderItem.Id.Value,
+            OrderId: orderItem.OrderId.Value,
+            ProductId: orderItem.ProductId.Value,
+            Quantity: orderItem.Quantity,
+            NetAmount: orderItem.NetAmount,
+            GrossAmount: orderItem.GrossAmount,
+            Currency: orderItem.Currency,
+            TotalNetAmount: orderItem.CalculateTotalNetAmount(),
+            TotalGrossAmount: orderItem.CalculateTotalGrossAmount()
         );
     }
 }

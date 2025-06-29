@@ -49,22 +49,7 @@ public class OrdersController : ControllerBase
 
             var response = await _initialOrderUseCase.ExecuteAsync(request, cancellationToken);
 
-            _logger.LogInformation("Successfully created initial order with OrderId: {OrderId}", response.OrderId);
-
-            // Start OrderProcessingWorkflow for the created order
-            var workflowId = $"order-processing-{response.OrderId}";
-            var workflowHandle = await _temporalClient.StartWorkflowAsync(
-                (OrderProcessingWorkflow wf) => wf.RunAsync(response.OrderId),
-                new WorkflowOptions
-                {
-                    Id = workflowId,
-                    TaskQueue = "order-processing"
-                });
-
-            // Associate the workflow ID with the order
-
-            _logger.LogInformation("Started OrderProcessingWorkflow with WorkflowId: {WorkflowId} for OrderId: {OrderId}",
-                workflowId, response.OrderId);
+            _logger.LogInformation("Successfully created initial order with OrderId: {OrderId} and started workflow", response.OrderId);
 
             return CreatedAtAction(nameof(CreateInitialOrder), new { id = response.OrderId }, response);
         }
@@ -175,3 +160,4 @@ public class OrdersController : ControllerBase
         }
     }
 }
+

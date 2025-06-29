@@ -1,12 +1,64 @@
 @Api_HostAddress = http://localhost:5208
 
-### 1. Create Initial Order (This will start the OrderProcessingWorkflow)
+### 1. Create Initial Order with Order Items (5th Iteration) - This will start the OrderProcessingWorkflow
 POST {{Api_HostAddress}}/api/orders
 Content-Type: application/json
 
 {
-  "referenceId": "order-ref-002",
-  "paymentAmount": 100.0
+  "referenceId": "order-ref-5th-001",
+  "orderItems": [
+    {
+      "productId": "550e8400-e29b-41d4-a716-446655440001",
+      "quantity": 2,
+      "netAmount": 25.99,
+      "grossAmount": 28.59,
+      "currency": "THB"
+    },
+    {
+      "productId": "550e8400-e29b-41d4-a716-446655440002", 
+      "quantity": 1,
+      "netAmount": 50.00,
+      "grossAmount": 55.00,
+      "currency": "THB"
+    }
+  ],
+  "paymentMethod": "CreditCard"
+}
+
+### 1b. Create Initial Order with Single Item
+POST {{Api_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "referenceId": "order-ref-5th-002",
+  "orderItems": [
+    {
+      "productId": "550e8400-e29b-41d4-a716-446655440003",
+      "quantity": 1,
+      "netAmount": 100.00,
+      "grossAmount": 107.00,
+      "currency": "THB"
+    }
+  ],
+  "paymentMethod": "Cash"
+}
+
+### 1c. Test Idempotency - Same Reference ID should return existing order
+POST {{Api_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "referenceId": "order-ref-5th-001",
+  "orderItems": [
+    {
+      "productId": "550e8400-e29b-41d4-a716-446655440001",
+      "quantity": 2,
+      "netAmount": 25.99,
+      "grossAmount": 28.59,
+      "currency": "THB"
+    }
+  ],
+  "paymentMethod": "CreditCard"
 }
 
 ###
@@ -87,3 +139,88 @@ Content-Type: application/json
 # 1. Execute step 1 to create an order
 # 2. Wait 30 minutes without sending payment or cancel signal
 # 3. Check Temporal UI to see the workflow automatically cancelled due to timeout
+
+### OrderItem Operations
+
+### 6. Add Order Item to an Order
+POST {{Api_HostAddress}}/api/orders/items
+Content-Type: application/json
+
+{
+  "orderId": "4a64b2f6-7bc5-4770-8d2b-975c840b174d",
+  "productId": "550e8400-e29b-41d4-a716-446655440001",
+  "quantity": 2,
+  "netAmount": 25.99,
+  "grossAmount": 28.59,
+  "currency": "THB"
+}
+
+###
+
+### 7. Update Order Item
+PUT {{Api_HostAddress}}/api/orders/items
+Content-Type: application/json
+
+{
+  "orderItemId": "replace-with-actual-order-item-id",
+  "quantity": 3,
+  "netAmount": 23.99,
+  "grossAmount": 26.39
+}
+
+###
+
+### 8. Get Order Items for an Order
+GET {{Api_HostAddress}}/api/orders/4a64b2f6-7bc5-4770-8d2b-975c840b174d/items
+Content-Type: application/json
+
+###
+
+### 9. Remove Order Item
+DELETE {{Api_HostAddress}}/api/orders/items/replace-with-actual-order-item-id
+Content-Type: application/json
+
+###
+
+### Example: Complete Order with Items Workflow
+### Step 1: Create initial order
+POST {{Api_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "referenceId": "order-with-items-001",
+  "paymentAmount": 100.0,
+  "currency": "THB",
+  "paymentMethod": "CreditCard"
+}
+
+### Step 2: Add first item (use orderId from Step 1)
+# @name addFirstItem
+POST {{Api_HostAddress}}/api/orders/items
+Content-Type: application/json
+
+{
+  "orderId": "replace-with-orderId-from-step1",
+  "productId": "550e8400-e29b-41d4-a716-446655440001",
+  "quantity": 1,
+  "netAmount": 50.00,
+  "grossAmount": 55.00,
+  "currency": "THB"
+}
+
+### Step 3: Add second item
+POST {{Api_HostAddress}}/api/orders/items
+Content-Type: application/json
+
+{
+  "orderId": "replace-with-orderId-from-step1",
+  "productId": "550e8400-e29b-41d4-a716-446655440002",
+  "quantity": 2,
+  "netAmount": 25.00,
+  "grossAmount": 27.50,
+  "currency": "THB"
+}
+
+### Step 4: Get detailed order with all items
+GET {{Api_HostAddress}}/api/orders/reference/order-with-items-001/details
+Content-Type: application/json

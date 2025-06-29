@@ -2,6 +2,8 @@ using Serilog;
 using Application.Extensions;
 using Infrastructure.Extensions;
 using Microsoft.Extensions.Hosting;
+using Infrastructure.Services;
+using Domain.Services;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -30,6 +32,8 @@ try
 
     // Add Infrastructure Services (Database, Temporal, etc.)
     builder.Services.AddInfrastructure(builder.Configuration);
+
+    builder.Services.AddScoped<IWorkflowService, WorkflowService>();
 
     // Configure CORS if needed
     builder.Services.AddCors(options =>
