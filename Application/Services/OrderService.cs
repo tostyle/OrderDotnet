@@ -246,45 +246,26 @@ public class OrderService
     }
 
     /// <summary>
-    /// GetOrderWithDetails - retrieve order with all related entities using efficient separate queries
-    /// for better performance than using multiple .Include() statements
+    /// GetOrderWithDetails - retrieve order with all related entities using repository method
+    /// with navigation properties for efficient data loading
     /// </summary>
     public async Task<DetailedOrderDto?> GetOrderWithDetailsAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
-        // First, get the order to ensure it exists
-        var order = await _orderRepository.GetByIdAsync(OrderId.From(orderId), cancellationToken);
+        // Get order with all related entities using repository method with navigation properties
+        var order = await _orderRepository.GetByIdWithDetailsAsync(OrderId.From(orderId), cancellationToken);
+
         if (order == null)
         {
             return null;
         }
 
-        // Execute all related data queries in parallel for better performance
-        var paymentTask = _paymentRepository.GetByOrderIdAsync(order.Id, cancellationToken);
-        var loyaltyTransactionsTask = _loyaltyRepository.GetByOrderIdAsync(order.Id, cancellationToken);
-        var stockReservationsTask = _stockRepository.GetByOrderIdAsync(order.Id, cancellationToken);
-        var orderItemsTask = _orderItemRepository.GetByOrderIdAsync(order.Id, cancellationToken);
-
-        // Wait for all queries to complete
-        await Task.WhenAll(paymentTask, loyaltyTransactionsTask, stockReservationsTask, orderItemsTask);
-
-        // Get the results
-        var payments = await paymentTask;
-        var loyaltyTransactions = await loyaltyTransactionsTask;
-        var stockReservations = await stockReservationsTask;
-        var orderItems = await orderItemsTask;
-
-        return DetailedOrderDto.FromDomainEntities(
-            order: order,
-            payment: payments.FirstOrDefault(), // Assuming one payment per order
-            loyaltyTransactions: loyaltyTransactions,
-            stockReservations: stockReservations,
-            orderItems: orderItems
-        );
+        // Use the original FromOrder method since navigation properties are loaded
+        return DetailedOrderDto.FromOrder(order);
     }
 
     /// <summary>
     /// GetOrderWithDetailsByReferenceId - retrieve order with all related entities by reference ID
-    /// using efficient separate queries for better performance
+    /// using repository method with navigation properties for efficient data loading
     /// </summary>
     public async Task<DetailedOrderDto?> GetOrderWithDetailsByReferenceIdAsync(string referenceId, CancellationToken cancellationToken = default)
     {
@@ -293,35 +274,16 @@ public class OrderService
             throw new ArgumentException("ReferenceId cannot be null or empty", nameof(referenceId));
         }
 
-        // First, get the order to ensure it exists
-        var order = await _orderRepository.GetByReferenceIdAsync(referenceId, cancellationToken);
+        // Get order with all related entities using repository method with navigation properties
+        var order = await _orderRepository.GetByReferenceIdWithDetailsAsync(referenceId, cancellationToken);
+
         if (order == null)
         {
             return null;
         }
 
-        // Execute all related data queries in parallel for better performance
-        var paymentTask = _paymentRepository.GetByOrderIdAsync(order.Id, cancellationToken);
-        var loyaltyTransactionsTask = _loyaltyRepository.GetByOrderIdAsync(order.Id, cancellationToken);
-        var stockReservationsTask = _stockRepository.GetByOrderIdAsync(order.Id, cancellationToken);
-        var orderItemsTask = _orderItemRepository.GetByOrderIdAsync(order.Id, cancellationToken);
-
-        // Wait for all queries to complete
-        await Task.WhenAll(paymentTask, loyaltyTransactionsTask, stockReservationsTask, orderItemsTask);
-
-        // Get the results
-        var payments = await paymentTask;
-        var loyaltyTransactions = await loyaltyTransactionsTask;
-        var stockReservations = await stockReservationsTask;
-        var orderItems = await orderItemsTask;
-
-        return DetailedOrderDto.FromDomainEntities(
-            order: order,
-            payment: payments.FirstOrDefault(), // Assuming one payment per order
-            loyaltyTransactions: loyaltyTransactions,
-            stockReservations: stockReservations,
-            orderItems: orderItems
-        );
+        // Use the original FromOrder method since navigation properties are loaded
+        return DetailedOrderDto.FromOrder(order);
     }
 
     /// <summary>
