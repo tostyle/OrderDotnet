@@ -2,8 +2,8 @@ using Serilog;
 using Application.Extensions;
 using Infrastructure.Extensions;
 using Microsoft.Extensions.Hosting;
-using Infrastructure.Services;
 using Domain.Services;
+using Workflow.Services;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()

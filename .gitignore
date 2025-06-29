@@ -87,3 +87,4 @@ secrets.json
 # Existing entry
 Data/
 Api/log/
+Api/logs/
