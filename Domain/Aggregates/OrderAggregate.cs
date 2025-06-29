@@ -39,6 +39,22 @@ public partial class OrderAggregate
     }
 
     /// <summary>
+    /// Factory method to create an aggregate from an existing order and optional related collections
+    /// </summary>
+    public static OrderAggregate From(
+        Order order,
+        List<OrderLoyalty>? loyaltyTransactions = null,
+        List<OrderPayment>? payments = null,
+        List<OrderStock>? stockReservations = null)
+    {
+        OrderAggregate aggregate = new OrderAggregate(order);
+        aggregate._loyaltyTransactions.AddRange(loyaltyTransactions ?? Enumerable.Empty<OrderLoyalty>());
+        aggregate._payments.AddRange(payments ?? Enumerable.Empty<OrderPayment>());
+        aggregate._stockReservations.AddRange(stockReservations ?? Enumerable.Empty<OrderStock>());
+        return aggregate;
+    }
+
+    /// <summary>
     /// Gets the underlying order entity
     /// </summary>
     public Order Order => _order;

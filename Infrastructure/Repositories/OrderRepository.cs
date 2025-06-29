@@ -66,4 +66,22 @@ public class OrderRepository : IOrderRepository
     {
         return await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<Order?> GetByIdWithDetailsAsync(OrderId orderId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Orders
+            .Include(o => o.Payment)
+            .Include(o => o.LoyaltyTransactions)
+            .Include(o => o.StockReservations)
+            .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+    }
+
+    public async Task<Order?> GetByReferenceIdWithDetailsAsync(string referenceId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Orders
+            .Include(o => o.Payment)
+            .Include(o => o.LoyaltyTransactions)
+            .Include(o => o.StockReservations)
+            .FirstOrDefaultAsync(o => o.ReferenceId == referenceId, cancellationToken);
+    }
 }

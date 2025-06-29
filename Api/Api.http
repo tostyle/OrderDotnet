@@ -1,6 +1,89 @@
 @Api_HostAddress = http://localhost:5208
 
-GET {{Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### 1. Create Initial Order (This will start the OrderProcessingWorkflow)
+POST {{Api_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "referenceId": "order-ref-002",
+  "paymentAmount": 100.0
+}
 
 ###
+
+### 2. Process Payment for Order (Send PaymentSuccess signal to workflow)
+# Replace the orderId below with the actual orderId from step 1 response
+POST {{Api_HostAddress}}/api/orders/4a64b2f6-7bc5-4770-8d2b-975c840b174d/payment
+Content-Type: application/json
+
+{
+  "paymentId": "payment-123"
+}
+
+###
+
+### 3. Cancel Order (Send CancelOrder signal to workflow)
+# Replace the orderId below with the actual orderId from step 1 response
+# Note: This will only work if payment hasn't been processed yet
+POST {{Api_HostAddress}}/api/orders/ff688858-86dc-40b9-8fe7-bff65313258e/cancel
+Content-Type: application/json
+
+{}
+
+### 
+
+### 4. Get detailed order information by order ID
+# Replace with actual orderId from step 1 response
+GET {{Api_HostAddress}}/api/orders/4a64b2f6-7bc5-4770-8d2b-975c840b174d/details
+Content-Type: application/json
+
+###
+
+### 5. Get detailed order information by reference ID
+# Replace with actual referenceId from step 1 response
+GET {{Api_HostAddress}}/api/orders/reference/order-ref-002/details
+Content-Type: application/json
+
+###
+
+### Example: Chained workflow - Create order then get details
+### Step 1: Create initial order
+POST {{Api_HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "referenceId": "detailed-order-test-001",
+  "paymentAmount": 150.0,
+  "currency": "USD",
+  "paymentMethod": "CreditCard"
+}
+
+### Step 2: Get the detailed order information using response from Step 1
+# @name createDetailedOrderTest
+GET {{Api_HostAddress}}/api/orders/reference/detailed-order-test-001/details
+Content-Type: application/json
+
+###
+
+### Example: Get detailed order information by reference ID
+GET {{Api_HostAddress}}/api/orders/reference/TEST_REF_123/details
+Content-Type: application/json
+
+###
+
+### How to test the complete workflow:
+# 1. Execute step 1 to create an order - this starts the OrderProcessingWorkflow
+# 2. Copy the orderId from the response
+# 3. Replace the orderId in steps 2 and 3 with the actual orderId
+# 4. Within 30 minutes, execute step 2 to send payment success signal
+# 5. Check Temporal UI at http://localhost:8233 to see workflow execution
+# 
+# Alternative scenario:
+# 1. Execute step 1 to create an order
+# 2. Execute step 3 to cancel the order (instead of step 2)
+# 3. Check Temporal UI to see the workflow was cancelled
+#
+# Timeout scenario:
+# 1. Execute step 1 to create an order
+# 2. Wait 30 minutes without sending payment or cancel signal
+# 3. Check Temporal UI to see the workflow automatically cancelled due to timeout

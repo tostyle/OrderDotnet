@@ -35,9 +35,24 @@ public class Order
     /// <summary>
     /// Temporal workflow ID for tracking workflow execution
     /// </summary>
-    public string? WorkflowId { get; private set; }
+    public string? WorkflowId { get; set; }
 
-    public string ReferenceId { get; private set; } = string.Empty;
+    public string ReferenceId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Navigation property for related loyalty transactions
+    /// </summary>
+    public virtual ICollection<OrderLoyalty> LoyaltyTransactions { get; set; } = new List<OrderLoyalty>();
+
+    /// <summary>
+    /// Navigation property for related stock reservations
+    /// </summary>
+    public virtual ICollection<OrderStock> StockReservations { get; set; } = new List<OrderStock>();
+
+    /// <summary>
+    /// Navigation property for related payment
+    /// </summary>
+    public virtual OrderPayment? Payment { get; set; }
 
     /// <summary>
     /// Domain events that have occurred
@@ -76,16 +91,6 @@ public class Order
     public void SetWorkflowId(string workflowId)
     {
         WorkflowId = workflowId ?? throw new ArgumentNullException(nameof(workflowId));
-        UpdatedAt = DateTime.UtcNow;
-        Version++;
-    }
-
-    /// <summary>
-    /// Sets the reference ID for external system tracking
-    /// </summary>
-    public void SetReferenceId(string referenceId)
-    {
-        ReferenceId = referenceId ?? throw new ArgumentNullException(nameof(referenceId));
         UpdatedAt = DateTime.UtcNow;
         Version++;
     }

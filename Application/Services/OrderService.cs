@@ -246,4 +246,135 @@ public class OrderService
             TransactionReference: payment.TransactionReference
         );
     }
+
+    public async Task<OrderDetailResponse> GetOrderDetailsAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        // First, get the order to ensure it exists
+        var order = await _orderRepository.GetByIdAsync(OrderId.From(orderId), cancellationToken);
+        if (order == null)
+        {
+            throw new InvalidOperationException($"Order {orderId} not found");
+        }
+
+        // Execute all related data queries in parallel for better performance
+        var loyaltyTransactions = await _loyaltyRepository.GetByOrderIdAsync(order.Id, cancellationToken);
+        var payments = await _paymentRepository.GetByOrderIdAsync(order.Id, cancellationToken);
+        var stockReservations = await _stockRepository.GetByOrderIdAsync(order.Id, cancellationToken);
+
+
+
+        return OrderDetailResponse.FromDomainEntities(
+            order: order,
+            loyaltyTransactions: loyaltyTransactions,
+            payments: payments,
+            stockReservations: stockReservations
+        );
+    }
+
+
+    /// <summary>
+    /// 5. StartWorkflow - associates a workflow ID with an order for tracking
+    /// </summary>
+    /// <param name="orderId">The order ID to start workflow for</param>
+    /// <param name="workflowId">The workflow ID to associate with the order</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Response indicating success/failure</returns>
+    public async Task<StartWorkflowResponse> StartWorkflowAsync(Guid orderId, string workflowId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(workflowId))
+        {
+            throw new ArgumentException("WorkflowId cannot be null or empty", nameof(workflowId));
+        }
+
+        // Find order by ID
+        var order = await _orderRepository.GetByIdAsync(OrderId.From(orderId), cancellationToken);
+        if (order == null)
+        {
+            throw new InvalidOperationException($"Order {orderId} not found");
+        }
+
+        // Check if order already has a workflow associated
+        if (!string.IsNullOrEmpty(order.WorkflowId))
+        {
+            throw new InvalidOperationException($"Order {orderId} already has workflow {order.WorkflowId} associated");
+            // return new StartWorkflowResponse(
+            //     OrderId: order.Id.Value,
+            //     WorkflowId: order.WorkflowId
+            // );
+        }
+
+        // Update the order with the workflow ID
+        order.SetWorkflowId(workflowId);
+
+        // Save changes to repository
+        await _orderRepository.UpdateAsync(order, cancellationToken);
+        await _orderRepository.SaveChangesAsync(cancellationToken);
+
+        return new StartWorkflowResponse(
+            OrderId: orderId,
+            WorkflowId: workflowId
+        );
+    }
+
+    /// <summary>
+    /// 6. GetWorkflowStatus - gets the workflow status for an order
+    /// </summary>
+    /// <param name="orderId">The order ID to check workflow status for</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Response with workflow status information</returns>
+    public async Task<WorkflowStatusResponse> GetWorkflowStatusAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        // Find order by ID
+        var order = await _orderRepository.GetByIdAsync(OrderId.From(orderId), cancellationToken);
+        if (order == null)
+        {
+            throw new InvalidOperationException($"Order {orderId} not found");
+        }
+
+        return new WorkflowStatusResponse(
+            OrderId: orderId,
+            WorkflowId: order.WorkflowId,
+            HasWorkflow: !string.IsNullOrEmpty(order.WorkflowId),
+            OrderState: order.OrderState.ToString(),
+            LastUpdated: order.UpdatedAt
+        );
+    }
+
+    /// <summary>
+    /// GetOrderWithDetails - retrieve order with all related entities (Payment, LoyaltyTransactions, StockReservations)
+    /// using navigation properties for efficient data loading
+    /// </summary>
+    public async Task<DetailedOrderDto?> GetOrderWithDetailsAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        var order = await _orderRepository.GetByIdWithDetailsAsync(OrderId.From(orderId), cancellationToken);
+
+        if (order == null)
+        {
+            return null;
+        }
+
+        return DetailedOrderDto.FromOrder(order);
+    }
+
+    /// <summary>
+    /// GetOrderWithDetailsByReferenceId - retrieve order with all related entities by reference ID
+    /// using navigation properties for efficient data loading
+    /// </summary>
+    public async Task<DetailedOrderDto?> GetOrderWithDetailsByReferenceIdAsync(string referenceId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(referenceId))
+        {
+            throw new ArgumentException("ReferenceId cannot be null or empty", nameof(referenceId));
+        }
+
+        var order = await _orderRepository.GetByReferenceIdWithDetailsAsync(referenceId, cancellationToken);
+
+        if (order == null)
+        {
+            return null;
+        }
+
+        return DetailedOrderDto.FromOrder(order);
+    }
+
 }

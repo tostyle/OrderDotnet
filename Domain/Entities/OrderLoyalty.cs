@@ -42,6 +42,11 @@ public class OrderLoyalty
     /// </summary>
     public string? ExternalTransactionId { get; private set; }
 
+    /// <summary>
+    /// Navigation property back to the parent Order
+    /// </summary>
+    public virtual Order Order { get; set; } = null!;
+
     // Private constructor for EF Core
     private OrderLoyalty()
     {

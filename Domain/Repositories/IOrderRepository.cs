@@ -47,4 +47,14 @@ public interface IOrderRepository
     /// Saves all changes to the underlying data store
     /// </summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets an order by its unique identifier with all related entities loaded
+    /// </summary>
+    Task<Order?> GetByIdWithDetailsAsync(OrderId orderId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets an order by its reference ID with all related entities loaded
+    /// </summary>
+    Task<Order?> GetByReferenceIdWithDetailsAsync(string referenceId, CancellationToken cancellationToken = default);
 }

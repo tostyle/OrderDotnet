@@ -29,3 +29,4 @@
 - Domain should be pure and not depend on any external libraries
 - Use postgres as the database
 - After finish your work plz read README.md in each project and adjust what u finish
+- Idempotent operations should be handled gracefully

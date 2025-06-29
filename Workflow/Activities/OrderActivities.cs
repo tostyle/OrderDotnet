@@ -1,3 +1,5 @@
+using Application.DTOs;
+using Application.Services;
 using Microsoft.Extensions.Logging;
 using Temporalio.Activities;
 
@@ -10,10 +12,12 @@ namespace Workflow.Activities;
 public class OrderActivities
 {
     private readonly ILogger<OrderActivities> _logger;
+    private readonly OrderService _orderService;
 
-    public OrderActivities(ILogger<OrderActivities> logger)
+    public OrderActivities(ILogger<OrderActivities> logger, OrderService orderService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
     }
 
     /// <summary>
@@ -21,14 +25,11 @@ public class OrderActivities
     /// TODO: Implement actual workflow initialization logic
     /// </summary>
     [Activity]
-    public async Task<bool> StartOrderWorkflowAsync(string workflowId, Guid orderId)
+    public async Task<StartWorkflowResponse> StartOrderWorkflowAsync(Guid orderId, string workflowId)
     {
         _logger.LogInformation("TODO: StartOrderWorkflow - WorkflowId: {WorkflowId}, OrderId: {OrderId}", workflowId, orderId);
-
-        // TODO: Implement workflow initialization
-        await Task.Delay(100); // Placeholder
-
-        return true;
+        var response = await _orderService.StartWorkflowAsync(orderId, workflowId);
+        return response;
     }
 
     /// <summary>
@@ -42,7 +43,6 @@ public class OrderActivities
 
         // TODO: Implement stock reservation
         await Task.Delay(100); // Placeholder
-
         return true;
     }
 
@@ -84,6 +84,20 @@ public class OrderActivities
     public async Task<bool> ProcessPaymentAsync(Guid orderId)
     {
         _logger.LogInformation("TODO: ProcessPayment for OrderId: {OrderId}", orderId);
+
+        // TODO: Implement payment processing
+        await Task.Delay(100); // Placeholder
+
+        return true;
+    }
+
+    /// <summary>
+    /// Activity 5: Cancel Order
+    /// </summary>
+    [Activity]
+    public async Task<bool> CancelOrderAsync(Guid orderId)
+    {
+        _logger.LogInformation("TODO: CancelOrder for OrderId: {OrderId}", orderId);
 
         // TODO: Implement payment processing
         await Task.Delay(100); // Placeholder

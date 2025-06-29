@@ -25,6 +25,10 @@ public static class InfrastructureServiceExtensions
             Console.WriteLine($"Connection string: {connectionString}");
             options.UseNpgsql(connectionString);
         });
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IOrderPaymentRepository, OrderPaymentRepository>();
+        services.AddScoped<IOrderStockRepository, OrderStockRepository>();
+        services.AddScoped<IOrderLoyaltyRepository, OrderLoyaltyRepository>();
         return services;
     }
 
@@ -36,21 +40,20 @@ public static class InfrastructureServiceExtensions
         // Register Database Context
         services.AddDatabase(configuration);
 
-        // Register Repositories
-        services.AddScoped<IOrderRepository, OrderRepository>();
-
         // Register Temporal Client
-        // services.AddSingleton<ITemporalClient>(provider =>
-        // {
-        //     var temporalAddress = configuration["Temporal:Address"] ?? "localhost:7233";
-        //     return TemporalClient.ConnectAsync(new TemporalClientConnectOptions
-        //     {
-        //         TargetHost = temporalAddress
-        //     }).GetAwaiter().GetResult();
-        // });
+        services.AddSingleton<ITemporalClient>(provider =>
+        {
+            var temporalAddress = configuration["Temporal:Address"] ?? "localhost:7233";
+            var temporalNamespace = configuration["Temporal:Namespace"] ?? "default";
 
-        // // Register Workflow Services
-        // services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
+            return TemporalClient.ConnectAsync(new TemporalClientConnectOptions
+            {
+                TargetHost = temporalAddress,
+                Namespace = temporalNamespace
+            }).GetAwaiter().GetResult();
+        });
+
+        // Register Temporal Service
 
         return services;
     }

@@ -52,6 +52,11 @@ public class OrderPayment
     /// </summary>
     public string? Notes { get; private set; }
 
+    /// <summary>
+    /// Navigation property back to the parent Order
+    /// </summary>
+    public virtual Order Order { get; set; } = null!;
+
     // Private constructor for EF Core
     private OrderPayment()
     {

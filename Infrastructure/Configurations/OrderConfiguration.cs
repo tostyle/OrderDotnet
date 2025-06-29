@@ -46,6 +46,26 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasMaxLength(255)
             .IsRequired();
 
+        // Configure navigation properties
+
+        // One-to-many relationship with OrderLoyalty
+        builder.HasMany(o => o.LoyaltyTransactions)
+            .WithOne(l => l.Order)
+            .HasForeignKey(l => l.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // One-to-many relationship with OrderStock
+        builder.HasMany(o => o.StockReservations)
+            .WithOne(s => s.Order)
+            .HasForeignKey(s => s.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // One-to-one relationship with OrderPayment
+        builder.HasOne(o => o.Payment)
+            .WithOne(p => p.Order)
+            .HasForeignKey<OrderPayment>(p => p.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // Index for better performance
         builder.HasIndex(o => o.WorkflowId);
         builder.HasIndex(o => o.ReferenceId)

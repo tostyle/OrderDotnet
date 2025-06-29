@@ -11,6 +11,8 @@ using Workflow.Activities;
 using Workflow.Workflows;
 using Workflow.Extensions;
 using Workflow.Configuration;
+using Application.Extensions;
+using Infrastructure.Extensions;
 
 // Create host builder
 var builder = Host.CreateApplicationBuilder(args);
@@ -34,6 +36,8 @@ builder.Services.AddTemporalClient(options =>
     options.TargetHost = temporalConfig.ServerHost;
     options.Namespace = temporalConfig.Namespace;
 });
+builder.Services.AddDatabase(builder.Configuration);
+builder.Services.AddApplication();
 
 // Register activity dependencies for dependency injection
 builder.Services.AddScoped<OrderActivities>();
