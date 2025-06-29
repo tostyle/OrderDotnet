@@ -21,6 +21,9 @@ public static class ApplicationServiceExtensions
 
         // Register Use Cases with scoped lifetime
         services.AddScoped<InitialOrderUseCase>();
+        services.AddScoped<ReserveStockUseCase>();
+        services.AddScoped<ProcessPaymentUseCase>();
+        services.AddScoped<CancelOrderUseCase>();
 
         return services;
     }

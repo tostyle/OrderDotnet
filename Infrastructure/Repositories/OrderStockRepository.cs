@@ -74,6 +74,13 @@ public class OrderStockRepository : IOrderStockRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<OrderStock?> GetByOrderIdAndProductIdAsync(OrderId orderId, ProductId productId, CancellationToken cancellationToken = default)
+    {
+        return await _context.OrderStockReservations
+            .Where(s => s.OrderId == orderId && s.ProductId == productId)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<int> GetTotalReservedQuantityAsync(ProductId productId, CancellationToken cancellationToken = default)
     {
         return await _context.OrderStockReservations

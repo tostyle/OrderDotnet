@@ -69,6 +69,8 @@ public class OrderRepository : IOrderRepository
 
     public async Task<Order?> GetByIdWithDetailsAsync(OrderId orderId, CancellationToken cancellationToken = default)
     {
+        // This method is kept for backward compatibility but is no longer recommended
+        // The preferred approach is to load data separately in the service layer for better performance
         return await _context.Orders
             .Include(o => o.Payment)
             .Include(o => o.LoyaltyTransactions)
@@ -79,6 +81,8 @@ public class OrderRepository : IOrderRepository
 
     public async Task<Order?> GetByReferenceIdWithDetailsAsync(string referenceId, CancellationToken cancellationToken = default)
     {
+        // This method is kept for backward compatibility but is no longer recommended
+        // The preferred approach is to load data separately in the service layer for better performance
         return await _context.Orders
             .Include(o => o.Payment)
             .Include(o => o.LoyaltyTransactions)

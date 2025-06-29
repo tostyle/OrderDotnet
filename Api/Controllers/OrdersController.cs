@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Application.UseCases;
 using Application.DTOs;
 using Application.Services;
-using Temporalio.Client;
-using Workflow.Workflows;
+using static Application.UseCases.ProcessPaymentUseCase;
+using static Application.UseCases.CancelOrderUseCase;
 
 namespace Api.Controllers;
 
@@ -17,19 +17,22 @@ public class OrdersController : ControllerBase
 {
     private readonly ILogger<OrdersController> _logger;
     private readonly InitialOrderUseCase _initialOrderUseCase;
+    private readonly ProcessPaymentUseCase _processPaymentUseCase;
+    private readonly CancelOrderUseCase _cancelOrderUseCase;
     private readonly OrderService _orderService;
-    private readonly ITemporalClient _temporalClient;
 
     public OrdersController(
         ILogger<OrdersController> logger,
         InitialOrderUseCase initialOrderUseCase,
-        OrderService orderService,
-        ITemporalClient temporalClient)
+        ProcessPaymentUseCase processPaymentUseCase,
+        CancelOrderUseCase cancelOrderUseCase,
+        OrderService orderService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _initialOrderUseCase = initialOrderUseCase ?? throw new ArgumentNullException(nameof(initialOrderUseCase));
+        _processPaymentUseCase = processPaymentUseCase ?? throw new ArgumentNullException(nameof(processPaymentUseCase));
+        _cancelOrderUseCase = cancelOrderUseCase ?? throw new ArgumentNullException(nameof(cancelOrderUseCase));
         _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
-        _temporalClient = temporalClient ?? throw new ArgumentNullException(nameof(temporalClient));
     }
 
     /// <summary>
@@ -73,7 +76,7 @@ public class OrdersController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success response</returns>
     [HttpPost("{orderId:guid}/payment")]
-    public async Task<ActionResult> ProcessPayment(
+    public async Task<ActionResult<ProcessPaymentUseCaseResponse>> ProcessPayment(
         [FromRoute] Guid orderId,
         [FromBody] ProcessPaymentSignalRequest request,
         CancellationToken cancellationToken = default)
@@ -83,29 +86,28 @@ public class OrdersController : ControllerBase
             _logger.LogInformation("Processing payment for order {OrderId} with payment ID: {PaymentId}",
                 orderId, request.PaymentId);
 
-            // Get order details to retrieve workflow ID
-            var orderDetails = await _orderService.GetOrderDetailsAsync(orderId, cancellationToken);
+            var useCaseRequest = new ProcessPaymentUseCaseRequest(
+                OrderId: orderId,
+                PaymentId: Guid.Parse(request.PaymentId),
+                TransactionReference: null, // Will be auto-generated
+                Notes: "Payment processed via API"
+            );
 
-            if (string.IsNullOrEmpty(orderDetails.Order.WorkflowId))
-            {
-                _logger.LogWarning("Order {OrderId} does not have an associated workflow", orderId);
-                return BadRequest(new { error = "Order does not have an associated workflow" });
-            }
+            var response = await _processPaymentUseCase.ExecuteAsync(useCaseRequest, cancellationToken);
 
-            // Send payment success signal to the workflow
-            var workflowHandle = _temporalClient.GetWorkflowHandle(orderDetails.Order.WorkflowId);
-            await workflowHandle.SignalAsync("PaymentSuccess", new object[] { orderId });
+            _logger.LogInformation("Successfully processed payment and sent signal to workflow {WorkflowId} for order {OrderId}",
+                response.WorkflowId, orderId);
 
-            _logger.LogInformation("Successfully sent payment success signal to workflow {WorkflowId} for order {OrderId}",
-                orderDetails.Order.WorkflowId, orderId);
-
-
-
-            return Ok(new { message = "Payment signal sent successfully", workflowId = orderDetails.Order.WorkflowId });
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Invalid request for processing payment for order {OrderId}", orderId);
+            return BadRequest(new { error = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "Order {OrderId} not found", orderId);
+            _logger.LogWarning(ex, "Order {OrderId} not found or invalid state", orderId);
             return NotFound(new { error = ex.Message });
         }
         catch (Exception ex)
@@ -119,38 +121,39 @@ public class OrdersController : ControllerBase
     /// Cancels an order and sends cancel signal to workflow
     /// </summary>
     /// <param name="orderId">The order ID to cancel</param>
+    /// <param name="request">The cancellation request (optional)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success response</returns>
     [HttpPost("{orderId:guid}/cancel")]
-    public async Task<ActionResult> CancelOrder(
+    public async Task<ActionResult<CancelOrderUseCaseResponse>> CancelOrder(
         [FromRoute] Guid orderId,
+        [FromBody] CancelOrderUseCaseRequest? request = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
             _logger.LogInformation("Cancelling order {OrderId}", orderId);
 
-            // Get order details to retrieve workflow ID
-            var orderDetails = await _orderService.GetOrderDetailsAsync(orderId, cancellationToken);
+            var useCaseRequest = new CancelOrderUseCaseRequest(
+                OrderId: orderId,
+                Reason: request?.Reason ?? "Manual cancellation via API"
+            );
 
-            if (string.IsNullOrEmpty(orderDetails.Order.WorkflowId))
-            {
-                _logger.LogWarning("Order {OrderId} does not have an associated workflow", orderId);
-                return BadRequest(new { error = "Order does not have an associated workflow" });
-            }
-
-            // Send cancel order signal to the workflow
-            var workflowHandle = _temporalClient.GetWorkflowHandle(orderDetails.Order.WorkflowId);
-            await workflowHandle.SignalAsync("CancelOrder", new object[] { orderId });
+            var response = await _cancelOrderUseCase.ExecuteAsync(useCaseRequest, cancellationToken);
 
             _logger.LogInformation("Successfully sent cancel signal to workflow {WorkflowId} for order {OrderId}",
-                orderDetails.Order.WorkflowId, orderId);
+                response.WorkflowId, orderId);
 
-            return Ok(new { message = "Cancel signal sent successfully", workflowId = orderDetails.Order.WorkflowId });
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Invalid request for cancelling order {OrderId}", orderId);
+            return BadRequest(new { error = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "Order {OrderId} not found", orderId);
+            _logger.LogWarning(ex, "Order {OrderId} not found or invalid state", orderId);
             return NotFound(new { error = ex.Message });
         }
         catch (Exception ex)

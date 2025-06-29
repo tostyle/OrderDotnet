@@ -49,6 +49,11 @@ public interface IOrderStockRepository
     Task<IEnumerable<OrderStock>> GetByProductIdAsync(ProductId productId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets an existing stock reservation by OrderId and ProductId for idempotency check
+    /// </summary>
+    Task<OrderStock?> GetByOrderIdAndProductIdAsync(OrderId orderId, ProductId productId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets total reserved quantity for a product
     /// </summary>
     Task<int> GetTotalReservedQuantityAsync(ProductId productId, CancellationToken cancellationToken = default);

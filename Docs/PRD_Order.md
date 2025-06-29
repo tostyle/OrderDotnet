@@ -68,3 +68,22 @@ fields
 2. create order items
 3. create order payment with payment method and set status to pending
 4. create temporal workflow
+---
+# 6th Iterate
+## Spec of ReserveStock Usecase
+- create new ReserveStock usecase
+- it not an endpoint do not create new endpoint in controller
+- input will be { orderId, productId } 
+- query Order Item by productId and then insert OrderStock record from orderItem Info
+- make it idempotence - check if Order
+- set ReservationStatus = 'Reserved'
+- for idempotence like reserve stock 
+I want to check if stock already reserved then system should not reserved again I will give Pseudo code idea
+```c#
+if (existingReservation is not null)
+    {
+        // Already reserved, return existing record
+        return existingReservation.ToResult(isAlreadyReserved: true);
+    }
+```
+

@@ -13,19 +13,6 @@ namespace Application.Extensions;
 public static class DtoMappingExtensions
 {
     /// <summary>
-    /// Creates a new OrderStock entity from a ReserveStockRequest DTO.
-    /// Note: This requires the parent OrderId to correctly associate the stock reservation.
-    /// </summary>
-    public static OrderStock ToOrderStock(this ReserveStockRequest request)
-    {
-        return OrderStock.Create(
-            orderId: OrderId.From(request.OrderId),
-            productId: ProductId.From(request.ProductId),
-            quantity: request.Quantity
-        );
-    }
-
-    /// <summary>
     /// Creates a new OrderLoyalty entity for an "Earn" transaction.
     /// </summary>
     public static OrderLoyalty ToEarnLoyalty(this EarnLoyaltyRequest request)

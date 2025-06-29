@@ -78,8 +78,7 @@ public record InitialOrderResponse(
 /// </summary>
 public record ReserveStockRequest(
     Guid OrderId,
-    Guid ProductId,
-    int Quantity
+    Guid ProductId
 );
 
 /// <summary>
@@ -89,15 +88,17 @@ public record ReserveStockResponse(
     Guid ReservationId,
     Guid ProductId,
     int Quantity,
-    string Status
+    string Status,
+    bool IsAlreadyReserved = false
 )
 {
     /// <summary>
     /// Creates a ReserveStockResponse from a Domain OrderStock entity
     /// </summary>
     /// <param name="stock">The domain OrderStock entity</param>
+    /// <param name="isAlreadyReserved">Flag indicating if this was an idempotent call</param>
     /// <returns>ReserveStockResponse mapped from the domain entity</returns>
-    public static ReserveStockResponse FromOrderStock(Domain.Entities.OrderStock stock)
+    public static ReserveStockResponse FromOrderStock(Domain.Entities.OrderStock stock, bool isAlreadyReserved = false)
     {
         if (stock == null)
             throw new ArgumentNullException(nameof(stock));
@@ -106,7 +107,8 @@ public record ReserveStockResponse(
             ReservationId: stock.Id.Value,
             ProductId: stock.ProductId.Value,
             Quantity: stock.QuantityReserved,
-            Status: stock.Status.ToString()
+            Status: stock.Status.ToString(),
+            IsAlreadyReserved: isAlreadyReserved
         );
     }
 };
@@ -260,7 +262,7 @@ public record OrderDetailResponse(
             Order: OrderDto.FromOrder(order),
             LoyaltyTransactions: loyaltyTransactions?.Select(LoyaltyTransactionResponse.FromOrderLoyalty),
             Payments: payments?.Select(ProcessPaymentResponse.FromOrderPayment),
-            StockReservations: stockReservations?.Select(ReserveStockResponse.FromOrderStock)
+            StockReservations: stockReservations?.Select(stock => ReserveStockResponse.FromOrderStock(stock))
         );
     }
 };
@@ -311,6 +313,41 @@ public record DetailedOrderDto(
             LoyaltyTransactions: order.LoyaltyTransactions?.Select(LoyaltyTransactionDto.FromOrderLoyalty) ?? Enumerable.Empty<LoyaltyTransactionDto>(),
             StockReservations: order.StockReservations?.Select(StockReservationDto.FromOrderStock) ?? Enumerable.Empty<StockReservationDto>(),
             OrderItems: order.OrderItems?.Select(OrderItemDto.FromOrderItem) ?? Enumerable.Empty<OrderItemDto>()
+        );
+    }
+
+    /// <summary>
+    /// Creates a DetailedOrderDto from separate domain entities for better performance
+    /// This method is used when related data is loaded separately rather than using navigation properties
+    /// </summary>
+    /// <param name="order">The domain Order entity</param>
+    /// <param name="payment">The OrderPayment entity (can be null)</param>
+    /// <param name="loyaltyTransactions">Collection of OrderLoyalty entities</param>
+    /// <param name="stockReservations">Collection of OrderStock entities</param>
+    /// <param name="orderItems">Collection of OrderItem entities</param>
+    /// <returns>DetailedOrderDto with all related data mapped</returns>
+    public static DetailedOrderDto FromDomainEntities(
+        Domain.Entities.Order order,
+        Domain.Entities.OrderPayment? payment,
+        IEnumerable<Domain.Entities.OrderLoyalty> loyaltyTransactions,
+        IEnumerable<Domain.Entities.OrderStock> stockReservations,
+        IEnumerable<Domain.Entities.OrderItem> orderItems)
+    {
+        if (order == null)
+            throw new ArgumentNullException(nameof(order));
+
+        return new DetailedOrderDto(
+            Id: order.Id.Value,
+            ReferenceId: order.ReferenceId,
+            OrderState: order.OrderState.ToString(),
+            CreatedAt: order.CreatedAt,
+            UpdatedAt: order.UpdatedAt,
+            Version: order.Version,
+            WorkflowId: order.WorkflowId,
+            Payment: payment != null ? OrderPaymentDto.FromOrderPayment(payment) : null,
+            LoyaltyTransactions: loyaltyTransactions?.Select(LoyaltyTransactionDto.FromOrderLoyalty) ?? Enumerable.Empty<LoyaltyTransactionDto>(),
+            StockReservations: stockReservations?.Select(StockReservationDto.FromOrderStock) ?? Enumerable.Empty<StockReservationDto>(),
+            OrderItems: orderItems?.Select(OrderItemDto.FromOrderItem) ?? Enumerable.Empty<OrderItemDto>()
         );
     }
 

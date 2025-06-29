@@ -37,9 +37,10 @@ public static class DomainMappingExtensions
     /// Converts OrderStock entity to ReserveStockResponse
     /// </summary>
     /// <param name="stock">The OrderStock entity</param>
+    /// <param name="isAlreadyReserved">Flag indicating if this was an idempotent call</param>
     /// <returns>ReserveStockResponse representation</returns>
-    public static ReserveStockResponse ToResponse(this OrderStock stock)
-        => ReserveStockResponse.FromOrderStock(stock);
+    public static ReserveStockResponse ToResponse(this OrderStock stock, bool isAlreadyReserved = false)
+        => ReserveStockResponse.FromOrderStock(stock, isAlreadyReserved);
 
     /// <summary>
     /// Converts a collection of Order entities to OrderDto collection
@@ -71,5 +72,5 @@ public static class DomainMappingExtensions
     /// <param name="stocks">Collection of OrderStock entities</param>
     /// <returns>Collection of ReserveStockResponse representations</returns>
     public static IEnumerable<ReserveStockResponse> ToResponses(this IEnumerable<OrderStock> stocks)
-        => stocks.Select(ToResponse);
+        => stocks.Select(stock => stock.ToResponse());
 }

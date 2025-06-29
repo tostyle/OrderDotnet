@@ -34,42 +34,6 @@ public class OrderService
     }
 
     /// <summary>
-    /// 2. ReserveStock - create DTO, find Order By Id and then call reservestock method in OrderAggregate save to repository
-    /// </summary>
-    public async Task<ReserveStockResponse> ReserveStockAsync(ReserveStockRequest request, CancellationToken cancellationToken = default)
-    {
-        // Find order by ID
-        var orderId = OrderId.From(request.OrderId);
-        var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
-
-        if (order == null)
-        {
-            throw new InvalidOperationException($"Order {request.OrderId} not found");
-        }
-
-        // Create OrderAggregate
-        var orderAggregate = OrderAggregate.FromExistingOrder(order);
-
-        // Call reserve stock method in OrderAggregate
-        var productId = ProductId.From(request.ProductId);
-        var reservationId = orderAggregate.ReserveStock(productId, request.Quantity);
-
-        // Get the stock reservation from the aggregate
-        var stockReservation = orderAggregate.StockReservations.First(s => s.Id == reservationId);
-
-        // Save stock reservation to repository
-        await _stockRepository.AddAsync(stockReservation, cancellationToken);
-        await _stockRepository.SaveChangesAsync(cancellationToken);
-
-        return new ReserveStockResponse(
-            ReservationId: stockReservation.Id.Value,
-            ProductId: stockReservation.ProductId.Value,
-            Quantity: stockReservation.QuantityReserved,
-            Status: stockReservation.Status.ToString()
-        );
-    }
-
-    /// <summary>
     /// 3. EarnLoyalty - make method calculate and save to repo
     /// </summary>
     public async Task<LoyaltyTransactionResponse> EarnLoyaltyAsync(EarnLoyaltyRequest request, CancellationToken cancellationToken = default)
@@ -282,24 +246,45 @@ public class OrderService
     }
 
     /// <summary>
-    /// GetOrderWithDetails - retrieve order with all related entities (Payment, LoyaltyTransactions, StockReservations)
-    /// using navigation properties for efficient data loading
+    /// GetOrderWithDetails - retrieve order with all related entities using efficient separate queries
+    /// for better performance than using multiple .Include() statements
     /// </summary>
     public async Task<DetailedOrderDto?> GetOrderWithDetailsAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
-        var order = await _orderRepository.GetByIdWithDetailsAsync(OrderId.From(orderId), cancellationToken);
-
+        // First, get the order to ensure it exists
+        var order = await _orderRepository.GetByIdAsync(OrderId.From(orderId), cancellationToken);
         if (order == null)
         {
             return null;
         }
 
-        return DetailedOrderDto.FromOrder(order);
+        // Execute all related data queries in parallel for better performance
+        var paymentTask = _paymentRepository.GetByOrderIdAsync(order.Id, cancellationToken);
+        var loyaltyTransactionsTask = _loyaltyRepository.GetByOrderIdAsync(order.Id, cancellationToken);
+        var stockReservationsTask = _stockRepository.GetByOrderIdAsync(order.Id, cancellationToken);
+        var orderItemsTask = _orderItemRepository.GetByOrderIdAsync(order.Id, cancellationToken);
+
+        // Wait for all queries to complete
+        await Task.WhenAll(paymentTask, loyaltyTransactionsTask, stockReservationsTask, orderItemsTask);
+
+        // Get the results
+        var payments = await paymentTask;
+        var loyaltyTransactions = await loyaltyTransactionsTask;
+        var stockReservations = await stockReservationsTask;
+        var orderItems = await orderItemsTask;
+
+        return DetailedOrderDto.FromDomainEntities(
+            order: order,
+            payment: payments.FirstOrDefault(), // Assuming one payment per order
+            loyaltyTransactions: loyaltyTransactions,
+            stockReservations: stockReservations,
+            orderItems: orderItems
+        );
     }
 
     /// <summary>
     /// GetOrderWithDetailsByReferenceId - retrieve order with all related entities by reference ID
-    /// using navigation properties for efficient data loading
+    /// using efficient separate queries for better performance
     /// </summary>
     public async Task<DetailedOrderDto?> GetOrderWithDetailsByReferenceIdAsync(string referenceId, CancellationToken cancellationToken = default)
     {
@@ -308,14 +293,35 @@ public class OrderService
             throw new ArgumentException("ReferenceId cannot be null or empty", nameof(referenceId));
         }
 
-        var order = await _orderRepository.GetByReferenceIdWithDetailsAsync(referenceId, cancellationToken);
-
+        // First, get the order to ensure it exists
+        var order = await _orderRepository.GetByReferenceIdAsync(referenceId, cancellationToken);
         if (order == null)
         {
             return null;
         }
 
-        return DetailedOrderDto.FromOrder(order);
+        // Execute all related data queries in parallel for better performance
+        var paymentTask = _paymentRepository.GetByOrderIdAsync(order.Id, cancellationToken);
+        var loyaltyTransactionsTask = _loyaltyRepository.GetByOrderIdAsync(order.Id, cancellationToken);
+        var stockReservationsTask = _stockRepository.GetByOrderIdAsync(order.Id, cancellationToken);
+        var orderItemsTask = _orderItemRepository.GetByOrderIdAsync(order.Id, cancellationToken);
+
+        // Wait for all queries to complete
+        await Task.WhenAll(paymentTask, loyaltyTransactionsTask, stockReservationsTask, orderItemsTask);
+
+        // Get the results
+        var payments = await paymentTask;
+        var loyaltyTransactions = await loyaltyTransactionsTask;
+        var stockReservations = await stockReservationsTask;
+        var orderItems = await orderItemsTask;
+
+        return DetailedOrderDto.FromDomainEntities(
+            order: order,
+            payment: payments.FirstOrDefault(), // Assuming one payment per order
+            loyaltyTransactions: loyaltyTransactions,
+            stockReservations: stockReservations,
+            orderItems: orderItems
+        );
     }
 
     /// <summary>
