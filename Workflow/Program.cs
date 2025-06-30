@@ -7,10 +7,10 @@ using Temporalio.Client;
 using Temporalio.Worker;
 using Temporalio.Workflows;
 using Temporalio.Activities;
-using Workflow.Activities;
-using Workflow.Workflows;
-using Workflow.Extensions;
-using Workflow.Configuration;
+using OrderWorkflow.Activities;
+using OrderWorkflow.OrderWorkflows;
+using OrderWorkflow.Configuration;
+using OrderWorkflow.Extensions;
 using Application.Extensions;
 using Infrastructure.Extensions;
 
@@ -38,9 +38,10 @@ builder.Services.AddTemporalClient(options =>
 });
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddApplication();
+builder.Services.AddWorkflowApplication();
 
 // Register activity dependencies for dependency injection
-builder.Services.AddScoped<OrderActivities>();
+// builder.Services.AddScoped<OrderActivities>();
 
 // Register and configure Temporal worker using configuration
 // This automatically discovers and registers ALL activities in OrderActivities class

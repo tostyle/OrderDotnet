@@ -1,11 +1,12 @@
 @Api_HostAddress = http://localhost:5208
 
 ### 1. Create Initial Order with Order Items (5th Iteration) - This will start the OrderProcessingWorkflow
+# @name createOrder
 POST {{Api_HostAddress}}/api/orders
 Content-Type: application/json
 
 {
-  "referenceId": "order-ref-5th-001",
+  "referenceId": "order-ref-008",
   "orderItems": [
     {
       "productId": "550e8400-e29b-41d4-a716-446655440001",
@@ -25,22 +26,16 @@ Content-Type: application/json
   "paymentMethod": "CreditCard"
 }
 
-### 1b. Create Initial Order with Single Item
-POST {{Api_HostAddress}}/api/orders
+### 2. Payment for Order
+# @name processPayment
+@createOrderId = {{createOrder.response.body.orderId}}
+@createOrderPaymentId = {{createOrder.response.body.paymentId}}
+POST {{Api_HostAddress}}/api/orders/{{createOrderId}}/payment
 Content-Type: application/json
 
 {
-  "referenceId": "order-ref-5th-002",
-  "orderItems": [
-    {
-      "productId": "550e8400-e29b-41d4-a716-446655440003",
-      "quantity": 1,
-      "netAmount": 100.00,
-      "grossAmount": 107.00,
-      "currency": "THB"
-    }
-  ],
-  "paymentMethod": "Cash"
+  "paymentId": "{{createOrderPaymentId}}",
+  "transactionReference": "TXN-{{createOrderId}}-{{createOrderPaymentId}}"
 }
 
 ### 1c. Test Idempotency - Same Reference ID should return existing order
@@ -65,8 +60,10 @@ Content-Type: application/json
 
 ### 2. Process Payment for Order (Send PaymentSuccess signal to workflow)
 # Replace the orderId below with the actual orderId from step 1 response
-POST {{Api_HostAddress}}/api/orders/4a64b2f6-7bc5-4770-8d2b-975c840b174d/payment
+# @name processPaymentStep2
+POST {{Api_HostAddress}}/api/orders/{{createOrder.response.body.orderId}}/payment
 Content-Type: application/json
+X-Order-Id: {{createOrder.response.body.orderId}}
 
 {
   "paymentId": "payment-123"
@@ -77,8 +74,9 @@ Content-Type: application/json
 ### 3. Cancel Order (Send CancelOrder signal to workflow)
 # Replace the orderId below with the actual orderId from step 1 response
 # Note: This will only work if payment hasn't been processed yet
-POST {{Api_HostAddress}}/api/orders/ff688858-86dc-40b9-8fe7-bff65313258e/cancel
+POST {{Api_HostAddress}}/api/orders/{{createOrder.response.body.orderId}}/cancel
 Content-Type: application/json
+X-Order-Id: {{createOrder.response.body.orderId}}
 
 {}
 
@@ -86,8 +84,9 @@ Content-Type: application/json
 
 ### 4. Get detailed order information by order ID
 # Replace with actual orderId from step 1 response
-GET {{Api_HostAddress}}/api/orders/4a64b2f6-7bc5-4770-8d2b-975c840b174d/details
+GET {{Api_HostAddress}}/api/orders/{{createOrder.response.body.orderId}}/details
 Content-Type: application/json
+X-Order-Id: {{createOrder.response.body.orderId}}
 
 ###
 
@@ -145,9 +144,10 @@ Content-Type: application/json
 ### 6. Add Order Item to an Order
 POST {{Api_HostAddress}}/api/orders/items
 Content-Type: application/json
+X-Order-Id: {{createOrder.response.body.orderId}}
 
 {
-  "orderId": "4a64b2f6-7bc5-4770-8d2b-975c840b174d",
+  "orderId": "{{createOrder.response.body.orderId}}",
   "productId": "550e8400-e29b-41d4-a716-446655440001",
   "quantity": 2,
   "netAmount": 25.99,
@@ -171,8 +171,9 @@ Content-Type: application/json
 ###
 
 ### 8. Get Order Items for an Order
-GET {{Api_HostAddress}}/api/orders/4a64b2f6-7bc5-4770-8d2b-975c840b174d/items
+GET {{Api_HostAddress}}/api/orders/{{createOrder.response.body.orderId}}/items
 Content-Type: application/json
+X-Order-Id: {{createOrder.response.body.orderId}}
 
 ###
 
@@ -198,9 +199,10 @@ Content-Type: application/json
 # @name addFirstItem
 POST {{Api_HostAddress}}/api/orders/items
 Content-Type: application/json
+X-Order-Id: {{createOrder.response.body.orderId}}
 
 {
-  "orderId": "replace-with-orderId-from-step1",
+  "orderId": "{{createOrder.response.body.orderId}}",
   "productId": "550e8400-e29b-41d4-a716-446655440001",
   "quantity": 1,
   "netAmount": 50.00,
@@ -211,9 +213,11 @@ Content-Type: application/json
 ### Step 3: Add second item
 POST {{Api_HostAddress}}/api/orders/items
 Content-Type: application/json
+X-Order-Id: {{createOrder.response.body.orderId}}
+X-Payment-Id: {{processPayment.response.body.paymentId}}
 
 {
-  "orderId": "replace-with-orderId-from-step1",
+  "orderId": "{{createOrder.response.body.orderId}}",
   "productId": "550e8400-e29b-41d4-a716-446655440002",
   "quantity": 2,
   "netAmount": 25.00,

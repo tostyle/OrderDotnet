@@ -1,8 +1,8 @@
 using Domain.Services;
 using Temporalio.Client;
-using Workflow.Workflows;
+using OrderWorkflow.OrderWorkflows;
 
-namespace Workflow.Services;
+namespace OrderWorkflow.Services;
 
 /// <summary>
 /// Implementation of IWorkflowService using Temporal

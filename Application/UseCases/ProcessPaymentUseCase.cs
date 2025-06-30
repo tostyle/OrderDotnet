@@ -70,27 +70,25 @@ public class ProcessPaymentUseCase
         }
 
         // Process payment using OrderService
-        var processPaymentRequest = new ProcessPaymentRequest(
-            PaymentId: request.PaymentId,
-            TransactionReference: request.TransactionReference ?? $"TXN-{DateTime.UtcNow:yyyyMMddHHmmss}",
-            Notes: request.Notes ?? "Payment processed via API"
-        );
+        // var processPaymentRequest = new ProcessPaymentRequest(
+        //     PaymentId: request.PaymentId,
+        //     TransactionReference: request.TransactionReference ?? $"TXN-{DateTime.UtcNow:yyyyMMddHHmmss}",
+        //     Notes: request.Notes ?? "Payment processed via API"
+        // );
 
-        var paymentResponse = await _orderService.ProcessPaymentAsync(processPaymentRequest, cancellationToken);
+        // var paymentResponse = await _orderService.ProcessPaymentAsync(processPaymentRequest, cancellationToken);
 
         // Send payment success signal to workflow
         await _workflowService.SendPaymentSuccessSignalAsync(
             orderId: request.OrderId,
             paymentId: request.PaymentId,
-            transactionReference: paymentResponse.TransactionReference ?? processPaymentRequest.TransactionReference,
+            transactionReference: "",
+            // transactionReference: paymentResponse.TransactionReference ?? processPaymentRequest.TransactionReference,
             cancellationToken: cancellationToken
         );
 
         return new ProcessPaymentUseCaseResponse(
-            PaymentId: paymentResponse.PaymentId,
-            Status: paymentResponse.Status,
-            PaidDate: paymentResponse.PaidDate,
-            TransactionReference: paymentResponse.TransactionReference,
+            PaymentId: request.PaymentId,
             WorkflowId: orderDetails.Order.WorkflowId
         );
     }
@@ -111,8 +109,5 @@ public record ProcessPaymentUseCaseRequest(
 /// </summary>
 public record ProcessPaymentUseCaseResponse(
     Guid PaymentId,
-    string Status,
-    DateTime? PaidDate,
-    string? TransactionReference,
     string? WorkflowId = null
 );

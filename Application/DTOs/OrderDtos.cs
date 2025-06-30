@@ -568,3 +568,48 @@ public record OrderItemResponse(
         );
     }
 }
+
+/// <summary>
+/// Request DTO for transitioning order state
+/// </summary>
+public record TransitionOrderStateRequest(
+    Guid OrderId,
+    Domain.Entities.OrderState OrderState,
+    string? Reason = null,
+    bool EnforceBusinessRules = true
+);
+
+/// <summary>
+/// Response DTO for order state transition
+/// </summary>
+public record TransitionOrderStateResponse(
+    Guid OrderId,
+    string PreviousState,
+    string NewState,
+    bool Success,
+    string Message,
+    string? Reason = null,
+    DateTime? TransitionedAt = null,
+    long? OrderVersion = null,
+    StateTransitionErrorDetails? ErrorDetails = null
+);
+
+/// <summary>
+/// Error details for failed state transitions
+/// </summary>
+public record StateTransitionErrorDetails(
+    string CurrentState,
+    string AttemptedState,
+    List<string> ValidNextStates
+);
+
+/// <summary>
+/// Response DTO for getting valid next states
+/// </summary>
+public record GetValidStatesResponse(
+    Guid OrderId,
+    string CurrentState,
+    List<string> ValidNextStates,
+    bool Success,
+    string? ErrorMessage = null
+);

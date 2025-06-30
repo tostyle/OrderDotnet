@@ -1,4 +1,4 @@
-namespace Workflow.Configuration;
+namespace OrderWorkflow.Configuration;
 
 /// <summary>
 /// Configuration options for Temporal connection and worker settings

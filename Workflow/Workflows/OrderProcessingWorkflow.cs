@@ -1,7 +1,9 @@
 using Temporalio.Workflows;
-using Workflow.Activities;
 
-namespace Workflow.Workflows;
+using OrderWorkflow.Activities;
+using Domain.Exceptions;
+
+namespace OrderWorkflow.OrderWorkflows;
 
 /// <summary>
 /// State object to track order processing progress
@@ -73,63 +75,101 @@ public class OrderProcessingWorkflow
     [WorkflowRun]
     public async Task<string> RunAsync(Guid orderId)
     {
-        var workflowId = Temporalio.Workflows.Workflow.Info.WorkflowId;
+        var workflowId = Workflow.Info.WorkflowId;
 
         try
         {
             // Activity 1: Start Order Workflow
-            var startResult = await Temporalio.Workflows.Workflow.ExecuteActivityAsync(
+            var startResult = await Workflow.ExecuteActivityAsync(
                 (OrderActivities activities) => activities.StartOrderWorkflowAsync(orderId, workflowId),
                 new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
 
             _state.IsStartedWorkflow = true;
 
-            // Activity 2: Reserve Stock
-            var reserveStockResult = await Temporalio.Workflows.Workflow.ExecuteActivityAsync(
-                (OrderActivities activities) => activities.ReserveStockAsync(orderId),
+            await Workflow.ExecuteActivityAsync(
+                (OrderActivities activities) => activities.ValidateFlightAsync(orderId),
                 new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
+
+            // Activity 2: Reserve Stock
+            var orderDetails = await Workflow.ExecuteActivityAsync(
+                (OrderActivities activities) => activities.GetOrderDetailAsync(orderId),
+                new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
+
+            foreach (var item in orderDetails.OrderItems)
+            {
+                await Workflow.ExecuteActivityAsync(
+                (OrderActivities activities) => activities.ReserveStockAsync(orderId, item.ProductId),
+                new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
+            }
 
             _state.IsReserveStock = true;
 
             // Activity 3: Burn Loyalty Transaction
-            var burnLoyaltyResult = await Temporalio.Workflows.Workflow.ExecuteActivityAsync(
+            var burnLoyaltyResult = await Workflow.ExecuteActivityAsync(
                 (OrderActivities activities) => activities.BurnLoyaltyTransactionAsync(orderId),
                 new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
 
             _state.IsBurnedLoyalty = true;
 
+            await Workflow.ExecuteActivityAsync(
+                (OrderActivities activities) => activities.TransitionToPendingState(orderId),
+                new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
+
+
             // Wait for payment or cancellation with 30-minute timeout
             var paymentTimeout = TimeSpan.FromMinutes(30);
-            var paymentReceived = await Temporalio.Workflows.Workflow.WaitConditionAsync(
-                () => _state.IsPaid || _state.IsCanceled,
-                paymentTimeout);
+            var paymentReceived = await Workflow.WaitConditionWithOptionsAsync(
+                // () => _state.IsPaid || _state.IsCanceled,
+                new WaitConditionOptions
+                {
+                    ConditionCheck = () => _state.IsPaid || _state.IsCanceled,
+                    Timeout = paymentTimeout,
+                    TimeoutSummary = "Waiting for payment or cancellation",
+                    CancellationToken = Workflow.CancellationToken
+
+                });
 
             if (_state.IsCanceled || !paymentReceived)
             {
-                await Temporalio.Workflows.Workflow.ExecuteActivityAsync(
+                await Workflow.ExecuteActivityAsync(
                     (OrderActivities activities) => activities.CancelOrderAsync(orderId),
                     new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
 
                 return $"Order {orderId} was canceled";
             }
 
+            await Workflow.ExecuteActivityAsync(
+            (OrderActivities activities) => activities.TransitionToPaidState(orderId),
+            new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
 
-            // Activity 4: Earn Loyalty Transaction (after payment)
-            var earnLoyaltyResult = await Temporalio.Workflows.Workflow.ExecuteActivityAsync(
-                (OrderActivities activities) => activities.EarnLoyaltyTransactionAsync(orderId),
-                new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
-
-            // Activity 6: Complete Cart
-            var completeCartResult = await Temporalio.Workflows.Workflow.ExecuteActivityAsync(
+            var completeCartResult = await Workflow.ExecuteActivityAsync(
                 (OrderActivities activities) => activities.CompletedCartAsync(orderId),
                 new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
 
+
+            var earnLoyaltyResult = await Workflow.ExecuteActivityAsync(
+            (OrderActivities activities) => activities.EarnLoyaltyTransactionAsync(orderId),
+            new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
+
+
+            await Workflow.ExecuteActivityAsync(
+            (OrderActivities activities) => activities.TransitionToCompletedState(orderId),
+            new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
+
             // Activity 7: Get Order Detail
-            var orderDetail = await Temporalio.Workflows.Workflow.ExecuteActivityAsync(
+            var orderDetail = await Workflow.ExecuteActivityAsync(
                 (OrderActivities activities) => activities.GetOrderDetailAsync(orderId),
                 new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
 
+
             return $"Order {orderId} processed successfully. Details: {orderDetail}";
+        }
+        catch (StateTransitionException ex)
+        {
+            // Handle specific state transition errors
+            // @TODO handle error gracefully, log it, and return a meaningful message
+
+            return $"Order StateTransition failed for order {orderId}: {ex.GetDetailedMessage()}";
         }
         catch (Exception ex)
         {

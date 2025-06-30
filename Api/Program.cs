@@ -3,7 +3,7 @@ using Application.Extensions;
 using Infrastructure.Extensions;
 using Microsoft.Extensions.Hosting;
 using Domain.Services;
-using Workflow.Services;
+using OrderWorkflow.Services;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()

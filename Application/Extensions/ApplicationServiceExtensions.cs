@@ -24,6 +24,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ReserveStockUseCase>();
         services.AddScoped<ProcessPaymentUseCase>();
         services.AddScoped<CancelOrderUseCase>();
+        services.AddScoped<TransitionOrderStateUseCase>();
 
         return services;
     }

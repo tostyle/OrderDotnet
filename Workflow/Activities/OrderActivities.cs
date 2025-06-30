@@ -1,9 +1,10 @@
 using Application.DTOs;
 using Application.Services;
+using Application.UseCases;
 using Microsoft.Extensions.Logging;
 using Temporalio.Activities;
 
-namespace Workflow.Activities;
+namespace OrderWorkflow.Activities;
 
 /// <summary>
 /// Activities for order processing workflow
@@ -13,11 +14,17 @@ public class OrderActivities
 {
     private readonly ILogger<OrderActivities> _logger;
     private readonly OrderService _orderService;
+    private readonly ReserveStockUseCase _reserveStockUseCase;
+    private readonly CancelOrderUseCase _cancelOrderUseCase;
+    private readonly TransitionOrderStateUseCase _transitionOrderStateUseCase;
 
-    public OrderActivities(ILogger<OrderActivities> logger, OrderService orderService)
+    public OrderActivities(ILogger<OrderActivities> logger, OrderService orderService, ReserveStockUseCase reserveStockUseCase, CancelOrderUseCase cancelOrderUseCase, TransitionOrderStateUseCase transitionOrderStateUseCase)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
+        _reserveStockUseCase = reserveStockUseCase ?? throw new ArgumentNullException(nameof(reserveStockUseCase));
+        _cancelOrderUseCase = cancelOrderUseCase ?? throw new ArgumentNullException(nameof(cancelOrderUseCase));
+        _transitionOrderStateUseCase = transitionOrderStateUseCase ?? throw new ArgumentNullException(nameof(transitionOrderStateUseCase));
     }
 
     /// <summary>
@@ -37,13 +44,10 @@ public class OrderActivities
     /// TODO: Implement stock reservation logic
     /// </summary>
     [Activity]
-    public async Task<bool> ReserveStockAsync(Guid orderId)
+    public async Task<ReserveStockResponse> ReserveStockAsync(Guid orderId, Guid productId)
     {
-        _logger.LogInformation("TODO: ReserveStock for OrderId: {OrderId}", orderId);
-
-        // TODO: Implement stock reservation
-        await Task.Delay(100); // Placeholder
-        return true;
+        var response = await _reserveStockUseCase.ExecuteAsync(new ReserveStockRequest(orderId, productId));
+        return response;
     }
 
     /// <summary>
@@ -100,7 +104,7 @@ public class OrderActivities
         _logger.LogInformation("TODO: CancelOrder for OrderId: {OrderId}", orderId);
 
         // TODO: Implement payment processing
-        await Task.Delay(100); // Placeholder
+        await _cancelOrderUseCase.ExecuteAsync(new CancelOrderUseCaseRequest(orderId));
 
         return true;
     }
@@ -116,7 +120,7 @@ public class OrderActivities
 
         // TODO: Implement cart completion
         await Task.Delay(100); // Placeholder
-
+        // throw new NotImplementedException("Cart completion logic is not implemented yet");
         return true;
     }
 
@@ -125,13 +129,38 @@ public class OrderActivities
     /// TODO: Implement order detail retrieval logic
     /// </summary>
     [Activity]
-    public async Task<string> GetOrderDetailAsync(Guid orderId)
+    public async Task<DetailedOrderDto> GetOrderDetailAsync(Guid orderId)
     {
-        _logger.LogInformation("TODO: GetOrderDetail for OrderId: {OrderId}", orderId);
+        var OrderDetails = await _orderService.GetOrderWithDetailsAsync(orderId);
+        if (OrderDetails == null)
+        {
+            throw new Exception($"Order with ID {orderId} not found");
+        }
+        return OrderDetails;
 
-        // TODO: Implement order detail retrieval
-        await Task.Delay(100); // Placeholder
+    }
 
-        return $"Order details for {orderId} - TODO: Implement";
+    [Activity]
+    public async Task ValidateFlightAsync(Guid orderId)
+    {
+        _logger.LogInformation("TODO: ValidateFlight for OrderId: {OrderId}", orderId);
+    }
+
+    [Activity]
+    public async Task TransitionToPendingState(Guid orderId)
+    {
+        await _transitionOrderStateUseCase.TransitionToPendingState(orderId);
+    }
+
+    [Activity]
+    public async Task TransitionToPaidState(Guid orderId)
+    {
+        await _transitionOrderStateUseCase.TransitionToPaidState(orderId);
+    }
+
+    [Activity]
+    public async Task TransitionToCompletedState(Guid orderId)
+    {
+        await _transitionOrderStateUseCase.TransitionToCompletedState(orderId);
     }
 }
