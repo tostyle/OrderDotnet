@@ -72,6 +72,18 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasForeignKey<OrderPayment>(p => p.OrderId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // One-to-many relationship with OrderJourneys
+        builder.HasMany(o => o.OrderJourneys)
+            .WithOne(j => j.Order)
+            .HasForeignKey(j => j.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // One-to-many relationship with OrderLogs
+        builder.HasMany(o => o.OrderLogs)
+            .WithOne(l => l.Order)
+            .HasForeignKey(l => l.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // Index for better performance
         builder.HasIndex(o => o.WorkflowId);
         builder.HasIndex(o => o.ReferenceId)

@@ -10,14 +10,22 @@ namespace Application.UseCases;
 /// <summary>
 /// Use case for handling order state transitions
 /// Follows clean architecture principles and implements secure state transition management
+/// Creates audit trail records for state transitions and logs
 /// </summary>
 public class TransitionOrderStateUseCase
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly IOrderJourneyRepository _orderJourneyRepository;
+    private readonly IOrderLogRepository _orderLogRepository;
 
-    public TransitionOrderStateUseCase(IOrderRepository orderRepository)
+    public TransitionOrderStateUseCase(
+        IOrderRepository orderRepository,
+        IOrderJourneyRepository orderJourneyRepository,
+        IOrderLogRepository orderLogRepository)
     {
         _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
+        _orderJourneyRepository = orderJourneyRepository ?? throw new ArgumentNullException(nameof(orderJourneyRepository));
+        _orderLogRepository = orderLogRepository ?? throw new ArgumentNullException(nameof(orderLogRepository));
     }
 
     /// <summary>
@@ -58,6 +66,34 @@ public class TransitionOrderStateUseCase
         // Save the updated order to the repository
         await _orderRepository.UpdateAsync(order, cancellationToken);
         await _orderRepository.SaveChangesAsync(cancellationToken);
+
+        // Create OrderJourney record for audit trail
+        var orderJourney = OrderJourney.Create(
+            orderId: orderIdValue,
+            oldState: previousState,
+            newState: orderState,
+            reason: reason,
+            initiatedBy: "System", // TODO: Get from current user context
+            metadata: $"{{\"transitionedAt\":\"{DateTime.UtcNow:yyyy-MM-ddTHH:mm:ss.fffZ}\",\"version\":{order.Version}}}"
+        );
+
+        await _orderJourneyRepository.AddAsync(orderJourney);
+
+        // Create OrderLog record for logging
+        var orderLog = OrderLog.CreateStateTransition(
+            orderId: orderIdValue,
+            oldState: previousState,
+            newState: orderState,
+            reason: reason,
+            performedBy: "System", // TODO: Get from current user context
+            source: "TransitionOrderStateUseCase"
+        );
+
+        await _orderLogRepository.AddAsync(orderLog);
+
+        // Save changes for audit trail
+        await _orderJourneyRepository.SaveChangesAsync();
+        await _orderLogRepository.SaveChangesAsync();
 
         Console.WriteLine($"[INFO] Successfully transitioned Order {orderId} from {previousState} to {orderState}. Reason: {reason ?? "No reason provided"}");
 

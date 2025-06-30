@@ -60,6 +60,16 @@ public class Order
     public virtual OrderPayment? Payment { get; set; }
 
     /// <summary>
+    /// Navigation property for order state transition journeys
+    /// </summary>
+    public virtual ICollection<OrderJourney> OrderJourneys { get; set; } = new List<OrderJourney>();
+
+    /// <summary>
+    /// Navigation property for order activity logs
+    /// </summary>
+    public virtual ICollection<OrderLog> OrderLogs { get; set; } = new List<OrderLog>();
+
+    /// <summary>
     /// Domain events that have occurred
     /// </summary>
 

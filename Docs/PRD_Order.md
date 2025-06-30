@@ -87,3 +87,14 @@ if (existingReservation is not null)
     }
 ```
 
+---
+# 7th Iterate
+## OrderJourneys and OrderLogs modules
+- create OrderJourneys model - that record state transition container old state, new state, transition date 
+    - relation order 1 to many OrderJourneys
+    - add compund index to OrderId + new state and OrderId + old state
+- create OrderLogs Model - record any order Log action
+    - relation order 1 to many OrderLogs
+- implement IRepository
+- add relation to entity framework
+- that enough not yet do any at application layer

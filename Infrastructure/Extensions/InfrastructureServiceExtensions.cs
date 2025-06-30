@@ -31,6 +31,8 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IOrderStockRepository, OrderStockRepository>();
         services.AddScoped<IOrderLoyaltyRepository, OrderLoyaltyRepository>();
         services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+        services.AddScoped<IOrderJourneyRepository, OrderJourneyRepository>();
+        services.AddScoped<IOrderLogRepository, OrderLogRepository>();
         return services;
     }
 
