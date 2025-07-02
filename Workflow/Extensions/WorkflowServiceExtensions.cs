@@ -16,6 +16,9 @@ public static class WorkflowServiceExtensions
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddWorkflowApplication(this IServiceCollection services)
     {
+        // Register WorkflowEventQueryService with scoped lifetime
+        services.AddScoped<IWorkflowEventQueryService, WorkflowEventQueryService>();
+
         // Register WorkflowService with scoped lifetime
         services.AddScoped<IWorkflowService, WorkflowService>();
 

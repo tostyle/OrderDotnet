@@ -6,7 +6,7 @@ POST {{Api_HostAddress}}/api/orders
 Content-Type: application/json
 
 {
-  "referenceId": "order-ref-024",
+  "referenceId": "order-ref-031",
   "orderItems": [
     {
       "productId": "550e8400-e29b-41d4-a716-446655440001",

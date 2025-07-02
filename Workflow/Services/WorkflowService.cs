@@ -14,11 +14,16 @@ public class WorkflowService : IWorkflowService
 {
     private readonly ITemporalClient _temporalClient;
     private readonly ILogger<WorkflowService> _logger;
+    private readonly IWorkflowEventQueryService _workflowEventQueryService;
 
-    public WorkflowService(ITemporalClient temporalClient, ILogger<WorkflowService> logger)
+    public WorkflowService(
+        ITemporalClient temporalClient,
+        ILogger<WorkflowService> logger,
+        IWorkflowEventQueryService workflowEventQueryService)
     {
         _temporalClient = temporalClient ?? throw new ArgumentNullException(nameof(temporalClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _workflowEventQueryService = workflowEventQueryService ?? throw new ArgumentNullException(nameof(workflowEventQueryService));
     }
 
     /// <summary>
@@ -120,14 +125,21 @@ public class WorkflowService : IWorkflowService
 
             _logger.LogInformation("Resetting workflow {WorkflowId} with RunId {RunId}", workflowId, runId);
 
+            // Find the event ID for TransitionToPendingState activity using the event query service
+            var eventId = await _workflowEventQueryService.FindActivityEventIdAsync(orderId, "TransitionToPendingState", cancellationToken);
+            if (!eventId.HasValue)
+            {
+                _logger.LogWarning("TransitionToPendingState activity not found in workflow history for order {OrderId}, using default event ID", orderId);
+                eventId = 1; // Default fallback
+            }
+
             var executionOption = new ResetWorkflowExecutionRequest
             {
                 Namespace = "default", // Required namespace field
                 RequestId = Guid.NewGuid().ToString(), // Required unique request ID
                 Reason = "Resetting workflow to TransitionToPendingState activity",
                 ResetReapplyType = ResetReapplyType.None,
-                ResetReapplyExcludeTypes = { ResetReapplyExcludeType.Signal },
-                WorkflowTaskFinishEventId = 10,
+                WorkflowTaskFinishEventId = eventId.Value, // Use the found event ID
                 WorkflowExecution = new Temporalio.Api.Common.V1.WorkflowExecution
                 {
                     WorkflowId = workflowId,
