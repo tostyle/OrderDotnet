@@ -6,7 +6,7 @@ POST {{Api_HostAddress}}/api/orders
 Content-Type: application/json
 
 {
-  "referenceId": "order-ref-009",
+  "referenceId": "order-ref-024",
   "orderItems": [
     {
       "productId": "550e8400-e29b-41d4-a716-446655440001",
@@ -38,193 +38,30 @@ Content-Type: application/json
   "transactionReference": "TXN-{{createOrderId}}-{{createOrderPaymentId}}"
 }
 
-### 1c. Test Idempotency - Same Reference ID should return existing order
-POST {{Api_HostAddress}}/api/orders
+
+### Test 2: Change cancelled order status to Pending (Valid Test)
+# @name changeOrderToPending
+PUT {{Api_HostAddress}}/api/orders/{{createOrderId}}/status/pending
 Content-Type: application/json
 
 {
-  "referenceId": "order-ref-5th-001",
-  "orderItems": [
-    {
-      "productId": "550e8400-e29b-41d4-a716-446655440001",
-      "quantity": 2,
-      "netAmount": 25.99,
-      "grossAmount": 28.59,
-      "currency": "THB"
-    }
-  ],
-  "paymentMethod": "CreditCard"
+  "reason": "Customer requested status reset",
+  "initiatedBy": "admin@example.com"
 }
 
-###
-
-### 2. Process Payment for Order (Send PaymentSuccess signal to workflow)
-# Replace the orderId below with the actual orderId from step 1 response
-# @name processPaymentStep2
-POST {{Api_HostAddress}}/api/orders/{{createOrder.response.body.orderId}}/payment
-Content-Type: application/json
-X-Order-Id: {{createOrder.response.body.orderId}}
-
-{
-  "paymentId": "payment-123"
-}
-
-###
-
-### 3. Cancel Order (Send CancelOrder signal to workflow)
-# Replace the orderId below with the actual orderId from step 1 response
-# Note: This will only work if payment hasn't been processed yet
-POST {{Api_HostAddress}}/api/orders/{{createOrder.response.body.orderId}}/cancel
-Content-Type: application/json
-X-Order-Id: {{createOrder.response.body.orderId}}
-
-{}
-
-### 
-
-### 4. Get detailed order information by order ID
-# Replace with actual orderId from step 1 response
-GET {{Api_HostAddress}}/api/orders/{{createOrder.response.body.orderId}}/details
-Content-Type: application/json
-X-Order-Id: {{createOrder.response.body.orderId}}
-
-###
-
-### 5. Get detailed order information by reference ID
-# Replace with actual referenceId from step 1 response
-GET {{Api_HostAddress}}/api/orders/reference/order-ref-002/details
-Content-Type: application/json
-
-###
-
-### Example: Chained workflow - Create order then get details
-### Step 1: Create initial order
-POST {{Api_HostAddress}}/api/orders
+### Test 3: Try to change non-cancelled order to Pending (should return 400/404)
+PUT {{Api_HostAddress}}/api/orders/{{createOrderId}}/status/cancelled
 Content-Type: application/json
 
 {
-  "referenceId": "detailed-order-test-001",
-  "paymentAmount": 150.0,
-  "currency": "USD",
-  "paymentMethod": "CreditCard"
+  "reason": "Testing business rule violation - this should fail 22"
 }
 
-### Step 2: Get the detailed order information using response from Step 1
-# @name createDetailedOrderTest
-GET {{Api_HostAddress}}/api/orders/reference/detailed-order-test-001/details
-Content-Type: application/json
 
-###
-
-### Example: Get detailed order information by reference ID
-GET {{Api_HostAddress}}/api/orders/reference/TEST_REF_123/details
-Content-Type: application/json
-
-###
-
-### How to test the complete workflow:
-# 1. Execute step 1 to create an order - this starts the OrderProcessingWorkflow
-# 2. Copy the orderId from the response
-# 3. Replace the orderId in steps 2 and 3 with the actual orderId
-# 4. Within 30 minutes, execute step 2 to send payment success signal
-# 5. Check Temporal UI at http://localhost:8233 to see workflow execution
-# 
-# Alternative scenario:
-# 1. Execute step 1 to create an order
-# 2. Execute step 3 to cancel the order (instead of step 2)
-# 3. Check Temporal UI to see the workflow was cancelled
-#
-# Timeout scenario:
-# 1. Execute step 1 to create an order
-# 2. Wait 30 minutes without sending payment or cancel signal
-# 3. Check Temporal UI to see the workflow automatically cancelled due to timeout
-
-### OrderItem Operations
-
-### 6. Add Order Item to an Order
-POST {{Api_HostAddress}}/api/orders/items
-Content-Type: application/json
-X-Order-Id: {{createOrder.response.body.orderId}}
-
-{
-  "orderId": "{{createOrder.response.body.orderId}}",
-  "productId": "550e8400-e29b-41d4-a716-446655440001",
-  "quantity": 2,
-  "netAmount": 25.99,
-  "grossAmount": 28.59,
-  "currency": "THB"
-}
-
-###
-
-### 7. Update Order Item
-PUT {{Api_HostAddress}}/api/orders/items
+### Test 5: Change status to Pending for non-existent order (should return 404)
+POST {{Api_HostAddress}}/api/orders/00000000-0000-0000-0000-000000000000/status/pending
 Content-Type: application/json
 
 {
-  "orderItemId": "replace-with-actual-order-item-id",
-  "quantity": 3,
-  "netAmount": 23.99,
-  "grossAmount": 26.39
+  "reason": "Testing non-existent order"
 }
-
-###
-
-### 8. Get Order Items for an Order
-GET {{Api_HostAddress}}/api/orders/{{createOrder.response.body.orderId}}/items
-Content-Type: application/json
-X-Order-Id: {{createOrder.response.body.orderId}}
-
-###
-
-### 9. Remove Order Item
-DELETE {{Api_HostAddress}}/api/orders/items/replace-with-actual-order-item-id
-Content-Type: application/json
-
-###
-
-### Example: Complete Order with Items Workflow
-### Step 1: Create initial order
-POST {{Api_HostAddress}}/api/orders
-Content-Type: application/json
-
-{
-  "referenceId": "order-with-items-001",
-  "paymentAmount": 100.0,
-  "currency": "THB",
-  "paymentMethod": "CreditCard"
-}
-
-### Step 2: Add first item (use orderId from Step 1)
-# @name addFirstItem
-POST {{Api_HostAddress}}/api/orders/items
-Content-Type: application/json
-X-Order-Id: {{createOrder.response.body.orderId}}
-
-{
-  "orderId": "{{createOrder.response.body.orderId}}",
-  "productId": "550e8400-e29b-41d4-a716-446655440001",
-  "quantity": 1,
-  "netAmount": 50.00,
-  "grossAmount": 55.00,
-  "currency": "THB"
-}
-
-### Step 3: Add second item
-POST {{Api_HostAddress}}/api/orders/items
-Content-Type: application/json
-X-Order-Id: {{createOrder.response.body.orderId}}
-X-Payment-Id: {{processPayment.response.body.paymentId}}
-
-{
-  "orderId": "{{createOrder.response.body.orderId}}",
-  "productId": "550e8400-e29b-41d4-a716-446655440002",
-  "quantity": 2,
-  "netAmount": 25.00,
-  "grossAmount": 27.50,
-  "currency": "THB"
-}
-
-### Step 4: Get detailed order with all items
-GET {{Api_HostAddress}}/api/orders/reference/order-with-items-001/details
-Content-Type: application/json

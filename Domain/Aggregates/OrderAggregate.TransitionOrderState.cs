@@ -153,6 +153,14 @@ public partial class OrderAggregate
     {
         // Order must have sufficient payments
         var orderTotalAmount = CalculateOrderTotalAmount();
+
+        // If order has no items (total amount is 0), we still require at least some payment
+        // This prevents transitioning to Paid state without any actual payment processing
+        if (orderTotalAmount == 0)
+        {
+            return TotalPaidAmount > 0; // Require some payment even for zero-amount orders
+        }
+
         return TotalPaidAmount >= orderTotalAmount;
     }
 

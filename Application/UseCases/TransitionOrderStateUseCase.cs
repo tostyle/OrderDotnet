@@ -138,4 +138,13 @@ public class TransitionOrderStateUseCase
         // Call the main transition method with Completed state
         return await TransitionOrderState(orderId, OrderState.Completed, reason, cancellationToken);
     }
+
+    public async Task<TransitionOrderStateResponse> TransitionToCancelledState(
+        Guid orderId,
+        string? reason = null,
+        CancellationToken cancellationToken = default)
+    {
+        // Call the main transition method with Cancelled state
+        return await TransitionOrderState(orderId, OrderState.Cancelled, reason, cancellationToken);
+    }
 }

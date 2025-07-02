@@ -132,7 +132,7 @@ public class OrderProcessingWorkflow
             if (_state.IsCanceled || !paymentReceived)
             {
                 await Workflow.ExecuteActivityAsync(
-                    (OrderActivities activities) => activities.CancelOrderAsync(orderId),
+                    (OrderActivities activities) => activities.TransitionToCancelledState(orderId, "Order was canceled due to timeout or manual cancellation"),
                     new() { StartToCloseTimeout = TimeSpan.FromMinutes(5) });
 
                 return $"Order {orderId} was canceled";

@@ -98,3 +98,10 @@ if (existingReservation is not null)
 - implement IRepository
 - add relation to entity framework
 - that enough not yet do any at application layer
+---
+# 8th Iterate
+## Implement Change Order Status To Pending usecase
+- implment new usecase call ChangeOrderStatusToPending (by orderId)
+- basiccally change order model and change status = Pending
+- add new method WorflowService that can reset workflow and find ActivityType = TransitionToPendingState -> reset temporatal workflow to this state
+- and then add to usecase 

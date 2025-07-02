@@ -25,6 +25,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ProcessPaymentUseCase>();
         services.AddScoped<CancelOrderUseCase>();
         services.AddScoped<TransitionOrderStateUseCase>();
+        services.AddScoped<ChangeOrderStatusToPendingUseCase>();
 
         return services;
     }

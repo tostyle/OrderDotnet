@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Application.UseCases;
 using Application.DTOs;
 using Application.Services;
+using Domain.Entities;
 using static Application.UseCases.ProcessPaymentUseCase;
 using static Application.UseCases.CancelOrderUseCase;
 
@@ -19,6 +20,7 @@ public class OrdersController : ControllerBase
     private readonly InitialOrderUseCase _initialOrderUseCase;
     private readonly ProcessPaymentUseCase _processPaymentUseCase;
     private readonly CancelOrderUseCase _cancelOrderUseCase;
+    private readonly ChangeOrderStatusToPendingUseCase _changeOrderStatusToPendingUseCase;
     private readonly OrderService _orderService;
 
     public OrdersController(
@@ -26,12 +28,14 @@ public class OrdersController : ControllerBase
         InitialOrderUseCase initialOrderUseCase,
         ProcessPaymentUseCase processPaymentUseCase,
         CancelOrderUseCase cancelOrderUseCase,
+        ChangeOrderStatusToPendingUseCase changeOrderStatusToPendingUseCase,
         OrderService orderService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _initialOrderUseCase = initialOrderUseCase ?? throw new ArgumentNullException(nameof(initialOrderUseCase));
         _processPaymentUseCase = processPaymentUseCase ?? throw new ArgumentNullException(nameof(processPaymentUseCase));
         _cancelOrderUseCase = cancelOrderUseCase ?? throw new ArgumentNullException(nameof(cancelOrderUseCase));
+        _changeOrderStatusToPendingUseCase = changeOrderStatusToPendingUseCase ?? throw new ArgumentNullException(nameof(changeOrderStatusToPendingUseCase));
         _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
     }
 
@@ -159,6 +163,88 @@ public class OrdersController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while cancelling order {OrderId}", orderId);
+            return StatusCode(500, new { error = "An internal server error occurred" });
+        }
+    }
+
+
+    /// <summary>
+    /// Updates order state based on the provided state parameter
+    /// </summary>
+    /// <param name="state">The target state to transition to</param>
+    /// <param name="request">Request containing orderId and optional parameters</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Response based on the state transition</returns>
+    [HttpPut("{orderId:guid}/status/{state:alpha}")]
+    public async Task<ActionResult> UpdateOrderState(
+        [FromRoute] Guid orderId,
+        [FromRoute] string state,
+        [FromBody] UpdateOrderStateRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Updating order {OrderId} state to {State}", request.OrderId, state);
+
+            // Validate and parse the state parameter
+            if (!Enum.TryParse<OrderState>(state, ignoreCase: true, out var targetState))
+            {
+                _logger.LogWarning("Invalid order state provided: {State}", state);
+                return BadRequest(new { error = $"Invalid order state: {state}. Valid states are: {string.Join(", ", Enum.GetNames<OrderState>())}" });
+            }
+
+            // Switch case for different state handlers
+            switch (targetState)
+            {
+                case OrderState.Pending:
+                    var pendingRequest = new ChangeOrderStatusToPendingRequest
+                    {
+                        OrderId = orderId,
+                        Reason = request.Reason ?? $"Status changed to Pending via API at {DateTime.UtcNow}",
+                        InitiatedBy = request.InitiatedBy ?? "API"
+                    };
+
+                    var pendingResponse = await _changeOrderStatusToPendingUseCase.ExecuteAsync(pendingRequest, cancellationToken);
+
+                    _logger.LogInformation("Successfully changed order {OrderId} status to Pending. IsAlreadyPending: {IsAlreadyPending}",
+                        orderId, pendingResponse.IsAlreadyPending);
+
+                    return Ok(pendingResponse);
+                case OrderState.Cancelled:
+                    var cancelRequest = new CancelOrderUseCaseRequest(
+                        orderId,
+                        request.Reason ?? "Order cancelled via API"
+                    );
+
+                    var cancelResponse = await _cancelOrderUseCase.ExecuteAsync(cancelRequest, cancellationToken);
+
+                    _logger.LogInformation("Successfully cancelled order {OrderId} and sent signal to workflow {WorkflowId}",
+                        orderId, cancelResponse.WorkflowId);
+
+                    return Ok(cancelResponse);
+                default:
+                    _logger.LogError("Unsupported order state transition: {State} for order {OrderId}", state, orderId);
+                    throw new NotSupportedException($"Order state transition to '{state}' is not currently supported. Only 'Pending' state transitions are implemented.");
+            }
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Invalid request for updating order {OrderId} state to {State}", orderId, state);
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Order {OrderId} not found or invalid state transition to {State}", orderId, state);
+            return NotFound(new { error = ex.Message });
+        }
+        catch (NotSupportedException ex)
+        {
+            _logger.LogWarning(ex, "Unsupported state transition to {State} for order {OrderId}", state, orderId);
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while updating order {OrderId} state to {State}", orderId, state);
             return StatusCode(500, new { error = "An internal server error occurred" });
         }
     }

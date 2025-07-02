@@ -163,4 +163,11 @@ public class OrderActivities
     {
         await _transitionOrderStateUseCase.TransitionToCompletedState(orderId);
     }
+
+
+    [Activity]
+    public async Task TransitionToCancelledState(Guid orderId, string? reason = null)
+    {
+        await _transitionOrderStateUseCase.TransitionToCancelledState(orderId, reason);
+    }
 }

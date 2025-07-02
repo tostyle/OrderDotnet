@@ -22,3 +22,5 @@
 - Domain should be pure and not depend on any external libraries
 - After finish your work plz read README.md in each project and adjust what u finish
 - Idempotent operations should be handled gracefully
+- use _logger for logging please inject ILogger<T> in constructor 
+- do not using  Console.WriteLine for logging

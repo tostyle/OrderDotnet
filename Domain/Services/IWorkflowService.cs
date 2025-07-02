@@ -31,4 +31,12 @@ public interface IWorkflowService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Task representing the async operation</returns>
     Task SendCancelOrderSignalAsync(Guid orderId, string reason = "Manual cancellation", CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Resets workflow to TransitionToPendingState activity for the specified order
+    /// </summary>
+    /// <param name="orderId">The order ID to reset workflow for</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Task representing the async operation</returns>
+    Task ResetWorkflowToPendingStateAsync(Guid orderId, CancellationToken cancellationToken = default);
 }

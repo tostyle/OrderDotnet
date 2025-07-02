@@ -79,6 +79,20 @@ The following are the main API endpoints:
 - `GET /api/orders/{id}`: Get the details of an order.
 - `POST /api/orders/{id}/payment`: Process a payment for an order.
 - `POST /api/orders/{id}/cancel`: Cancel an order.
+- `POST /api/orders/{id}/status/pending`: Change order status to pending (specific endpoint).
+- `PUT /api/orders/state/{state}`: Update order state (generic endpoint with switch case logic).
+
+### Order State Management
+The system supports multiple ways to manage order states:
+
+**Generic State Endpoint:**
+- `PUT /api/orders/state/{state}` - Updates order to the specified state
+- Currently supports: `pending` (other states throw NotSupportedException)
+- Uses switch case pattern for extensible state handling
+- Request body: `{ "orderId": "guid", "reason": "string", "initiatedBy": "string" }`
+
+**Specific State Endpoints:**
+- `POST /api/orders/{id}/status/pending` - Dedicated endpoint for pending state transitions
 
 For a full list of endpoints, please refer to the `Api/Controllers/OrdersController.cs` file or run the application and access the Swagger UI at `http://localhost:5000/swagger`.
 

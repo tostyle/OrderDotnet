@@ -25,7 +25,7 @@ namespace Domain.Entities
             new OrderTransitionRule(OrderState.Paid, new List<OrderState> { OrderState.Completed, OrderState.Refunded }),
             new OrderTransitionRule(OrderState.Refunded, new List<OrderState> { OrderState.Cancelled }),
             new OrderTransitionRule(OrderState.Completed, new List<OrderState> { OrderState.Cancelled }),
-            new OrderTransitionRule(OrderState.Cancelled, new List<OrderState>())
+            new OrderTransitionRule(OrderState.Cancelled, new List<OrderState> { OrderState.Pending })
         ];
         public static bool IsValidTransition(OrderState from, OrderState to)
             => Rules.Any(rule => rule.State == from && rule.NextStates.Contains(to));
