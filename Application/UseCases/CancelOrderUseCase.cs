@@ -13,12 +13,12 @@ namespace Application.UseCases;
 public class CancelOrderUseCase
 {
     private readonly OrderService _orderService;
-    private readonly IWorkflowService _workflowService;
+    private readonly IOrderWorkflowService _workflowService;
     private readonly IOrderRepository _orderRepository;
 
     public CancelOrderUseCase(
         OrderService orderService,
-        IWorkflowService workflowService,
+        IOrderWorkflowService workflowService,
         IOrderRepository orderRepository)
     {
         _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));

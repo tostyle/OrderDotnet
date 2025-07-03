@@ -10,15 +10,15 @@ namespace OrderWorkflow.Services;
 /// <summary>
 /// Implementation of IWorkflowService using Temporal
 /// </summary>
-public class WorkflowService : IWorkflowService
+public class OrderWorkflowService : IOrderWorkflowService
 {
     private readonly ITemporalClient _temporalClient;
-    private readonly ILogger<WorkflowService> _logger;
+    private readonly ILogger<OrderWorkflowService> _logger;
     private readonly IWorkflowEventQueryService _workflowEventQueryService;
 
-    public WorkflowService(
+    public OrderWorkflowService(
         ITemporalClient temporalClient,
-        ILogger<WorkflowService> logger,
+        ILogger<OrderWorkflowService> logger,
         IWorkflowEventQueryService workflowEventQueryService)
     {
         _temporalClient = temporalClient ?? throw new ArgumentNullException(nameof(temporalClient));
@@ -126,11 +126,10 @@ public class WorkflowService : IWorkflowService
             _logger.LogInformation("Resetting workflow {WorkflowId} with RunId {RunId}", workflowId, runId);
 
             // Find the event ID for TransitionToPendingState activity using the event query service
-            var eventId = await _workflowEventQueryService.FindActivityEventIdAsync(orderId, "TransitionToPendingState", cancellationToken);
+            var eventId = await _workflowEventQueryService.FindCheckPointEventIdAsync(orderId, "TransitionToPendingState", cancellationToken);
             if (!eventId.HasValue)
             {
                 _logger.LogWarning("TransitionToPendingState activity not found in workflow history for order {OrderId}, using default event ID", orderId);
-                eventId = 1; // Default fallback
             }
 
             var executionOption = new ResetWorkflowExecutionRequest

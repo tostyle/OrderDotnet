@@ -16,13 +16,13 @@ public class InitialOrderUseCase
     private readonly IOrderRepository _orderRepository;
     private readonly IOrderPaymentRepository _paymentRepository;
     private readonly IOrderItemRepository _orderItemRepository;
-    private readonly IWorkflowService _workflowService;
+    private readonly IOrderWorkflowService _workflowService;
 
     public InitialOrderUseCase(
         IOrderRepository orderRepository,
         IOrderPaymentRepository paymentRepository,
         IOrderItemRepository orderItemRepository,
-        IWorkflowService workflowService)
+        IOrderWorkflowService workflowService)
     {
         _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
         _paymentRepository = paymentRepository ?? throw new ArgumentNullException(nameof(paymentRepository));

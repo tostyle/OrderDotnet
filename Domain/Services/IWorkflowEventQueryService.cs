@@ -35,6 +35,7 @@ public interface IWorkflowEventQueryService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The event ID of the activity, or null if not found</returns>
     Task<long?> FindActivityEventIdAsync(Guid orderId, string activityType, CancellationToken cancellationToken = default);
+    Task<long?> FindCheckPointEventIdAsync(Guid orderId, string activityType, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets a summary of workflow execution status and progress

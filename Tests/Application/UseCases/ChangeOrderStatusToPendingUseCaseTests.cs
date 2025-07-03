@@ -19,7 +19,7 @@ public class ChangeOrderStatusToPendingUseCaseTests
     private readonly Mock<IOrderRepository> _mockOrderRepository;
     private readonly Mock<IOrderJourneyRepository> _mockOrderJourneyRepository;
     private readonly Mock<IOrderLogRepository> _mockOrderLogRepository;
-    private readonly Mock<IWorkflowService> _mockWorkflowService;
+    private readonly Mock<IOrderWorkflowService> _mockWorkflowService;
     private readonly ChangeOrderStatusToPendingUseCase _useCase;
 
     public ChangeOrderStatusToPendingUseCaseTests()
@@ -27,7 +27,7 @@ public class ChangeOrderStatusToPendingUseCaseTests
         _mockOrderRepository = new Mock<IOrderRepository>();
         _mockOrderJourneyRepository = new Mock<IOrderJourneyRepository>();
         _mockOrderLogRepository = new Mock<IOrderLogRepository>();
-        _mockWorkflowService = new Mock<IWorkflowService>();
+        _mockWorkflowService = new Mock<IOrderWorkflowService>();
 
         _useCase = new ChangeOrderStatusToPendingUseCase(
             _mockOrderRepository.Object,

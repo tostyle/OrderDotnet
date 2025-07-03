@@ -16,13 +16,13 @@ public class ChangeOrderStatusToPendingUseCase
     private readonly IOrderRepository _orderRepository;
     private readonly IOrderJourneyRepository _orderJourneyRepository;
     private readonly IOrderLogRepository _orderLogRepository;
-    private readonly IWorkflowService _workflowService;
+    private readonly IOrderWorkflowService _workflowService;
 
     public ChangeOrderStatusToPendingUseCase(
         IOrderRepository orderRepository,
         IOrderJourneyRepository orderJourneyRepository,
         IOrderLogRepository orderLogRepository,
-        IWorkflowService workflowService)
+        IOrderWorkflowService workflowService)
     {
         _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
         _orderJourneyRepository = orderJourneyRepository ?? throw new ArgumentNullException(nameof(orderJourneyRepository));

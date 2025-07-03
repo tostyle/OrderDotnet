@@ -3,7 +3,7 @@ namespace Domain.Services;
 /// <summary>
 /// Interface for workflow management service
 /// </summary>
-public interface IWorkflowService
+public interface IOrderWorkflowService
 {
     /// <summary>
     /// Starts a workflow for order processing

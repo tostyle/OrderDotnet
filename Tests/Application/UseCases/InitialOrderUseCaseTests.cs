@@ -17,7 +17,7 @@ public class InitialOrderUseCaseTests
     private readonly Mock<IOrderRepository> _orderRepoMock;
     private readonly Mock<IOrderPaymentRepository> _paymentRepoMock;
     private readonly Mock<IOrderItemRepository> _orderItemRepoMock;
-    private readonly Mock<IWorkflowService> _workflowServiceMock;
+    private readonly Mock<IOrderWorkflowService> _workflowServiceMock;
     private readonly InitialOrderUseCase _useCase;
 
     public InitialOrderUseCaseTests()
@@ -25,7 +25,7 @@ public class InitialOrderUseCaseTests
         _orderRepoMock = new Mock<IOrderRepository>();
         _paymentRepoMock = new Mock<IOrderPaymentRepository>();
         _orderItemRepoMock = new Mock<IOrderItemRepository>();
-        _workflowServiceMock = new Mock<IWorkflowService>();
+        _workflowServiceMock = new Mock<IOrderWorkflowService>();
 
         _useCase = new InitialOrderUseCase(
             _orderRepoMock.Object,

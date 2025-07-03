@@ -13,12 +13,12 @@ namespace Application.UseCases;
 public class ProcessPaymentUseCase
 {
     private readonly OrderService _orderService;
-    private readonly IWorkflowService _workflowService;
+    private readonly IOrderWorkflowService _workflowService;
     private readonly IOrderPaymentRepository _paymentRepository;
 
     public ProcessPaymentUseCase(
         OrderService orderService,
-        IWorkflowService workflowService,
+        IOrderWorkflowService workflowService,
         IOrderPaymentRepository paymentRepository)
     {
         _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));

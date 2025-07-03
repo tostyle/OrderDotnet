@@ -20,7 +20,7 @@ public static class WorkflowServiceExtensions
         services.AddScoped<IWorkflowEventQueryService, WorkflowEventQueryService>();
 
         // Register WorkflowService with scoped lifetime
-        services.AddScoped<IWorkflowService, WorkflowService>();
+        services.AddScoped<IOrderWorkflowService, OrderWorkflowService>();
 
         return services;
     }

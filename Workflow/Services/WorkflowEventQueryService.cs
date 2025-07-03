@@ -90,6 +90,48 @@ public class WorkflowEventQueryService : IWorkflowEventQueryService
         return activityEvents.Select(ConvertToWorkflowHistoryEvent).ToList();
     }
 
+
+    public async Task<IList<WorkflowHistoryEvent>> GetCheckPointWorkflowAsync(
+        Guid orderId,
+        CancellationToken cancellationToken = default)
+    {
+        var allEvents = await GetTemporalWorkflowHistoryAsync(orderId, cancellationToken);
+
+        // Filter for activity-related events
+        var activityEvents = allEvents.Where(e =>
+            e.EventType == EventType.ActivityTaskScheduled ||
+            e.EventType == EventType.WorkflowTaskCompleted
+        ).Select(ConvertToWorkflowHistoryEvent).ToList();
+
+        return activityEvents;
+    }
+
+    public async Task<long?> FindCheckPointEventIdAsync(Guid orderId, string activityType, CancellationToken cancellationToken = default)
+    {
+        var allEvents = await GetTemporalWorkflowHistoryAsync(orderId, cancellationToken);
+        var eventList = allEvents.ToList();
+        // Lambda function to recursively find the first WorkflowCompleted event by index
+        Func<int, Temporalio.Api.History.V1.HistoryEvent?> FindWorkflowCompletedEvent = null!;
+        FindWorkflowCompletedEvent = (index) =>
+        {
+            if (index >= allEvents.Count)
+                return null;
+
+            var currentEvent = allEvents[index];
+            if (currentEvent.EventType == EventType.WorkflowTaskCompleted)
+                return currentEvent;
+
+            return FindWorkflowCompletedEvent(index + 1);
+        };
+        var scheduledEventIndex = eventList.FindIndex(e =>
+            e.EventType == EventType.ActivityTaskScheduled &&
+            e.ActivityTaskScheduledEventAttributes?.ActivityType?.Name == activityType);
+
+        var workflowCompletedEvent = FindWorkflowCompletedEvent(scheduledEventIndex);
+        return workflowCompletedEvent?.EventId;
+    }
+
+
     /// <summary>
     /// Finds the event ID for a specific activity type (useful for workflow reset)
     /// </summary>
