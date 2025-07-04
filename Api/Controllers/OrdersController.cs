@@ -58,7 +58,7 @@ public class OrdersController : ControllerBase
 
             _logger.LogInformation("Successfully created initial order with OrderId: {OrderId} and started workflow", response.OrderId);
 
-            return CreatedAtAction(nameof(CreateInitialOrder), new { id = response.OrderId }, response);
+            return response.Created ? CreatedAtAction(nameof(CreateInitialOrder), new { id = response.OrderId }, response) : Ok(response);
         }
         catch (ArgumentException ex)
         {

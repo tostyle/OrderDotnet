@@ -68,7 +68,8 @@ public class InitialOrderUseCase
                 OrderId: existingOrder.Id.Value,
                 ReferenceId: existingOrder.ReferenceId,
                 PaymentId: firstPayment.Id.Value,
-                PaymentStatus: firstPayment.Status.ToString()
+                PaymentStatus: firstPayment.Status.ToString(),
+                Created: false
             );
         }
 
@@ -125,7 +126,8 @@ public class InitialOrderUseCase
             OrderId: order.Id.Value,
             ReferenceId: order.ReferenceId,
             PaymentId: payment.Id.Value,
-            PaymentStatus: payment.Status.ToString()
+            PaymentStatus: payment.Status.ToString(),
+            Created: true
         );
     }
 }

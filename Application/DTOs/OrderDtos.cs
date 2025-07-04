@@ -70,7 +70,8 @@ public record InitialOrderResponse(
     Guid OrderId,
     string ReferenceId,
     Guid PaymentId,
-    string PaymentStatus
+    string PaymentStatus,
+    bool Created
 );
 
 /// <summary>

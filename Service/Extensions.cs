@@ -57,6 +57,8 @@ public static class Extensions
         {
             logging.IncludeFormattedMessage = true;
             logging.IncludeScopes = true;
+            logging.AddConsoleExporter();
+            logging.AddOtlpExporter(configureOtlpExporter);
         });
 
         builder.Services.AddOpenTelemetry().ConfigureResource(resource =>
@@ -92,14 +94,14 @@ public static class Extensions
             });
 
         builder.AddOpenTelemetryExporters();
-        builder.Logging.AddOpenTelemetry(options =>
-        {
-            // See appsettings.json "Logging:OpenTelemetry" section for configuration.
-            var resourceBuilder = ResourceBuilder.CreateDefault();
-            options.SetResourceBuilder(resourceBuilder);
-            // options.AddConsoleExporter();
-            options.AddOtlpExporter(configureOtlpExporter);
-        });
+        // builder.Logging.AddOpenTelemetry(options =>
+        // {
+        //     // See appsettings.json "Logging:OpenTelemetry" section for configuration.
+        //     var resourceBuilder = ResourceBuilder.CreateDefault();
+        //     options.SetResourceBuilder(resourceBuilder);
+        //     // options.AddConsoleExporter();
+        //     options.AddOtlpExporter(configureOtlpExporter);
+        // });
 
         return builder;
     }
