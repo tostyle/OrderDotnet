@@ -82,7 +82,11 @@ public static class Extensions
                 tracing.AddConsoleExporter();
                 tracing.AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddEntityFrameworkCoreInstrumentation()
+                    .AddEntityFrameworkCoreInstrumentation(options =>
+                    {
+                        options.SetDbStatementForText = true;
+                        options.SetDbStatementForStoredProcedure = false;
+                    })
                     .AddConsoleExporter()
                     .AddOtlpExporter(configureOtlpExporter);
             });
