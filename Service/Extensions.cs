@@ -5,16 +5,22 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ServiceDiscovery;
 using OpenTelemetry;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 namespace Microsoft.Extensions.Hosting;
+
+
 
 // Adds common .NET Aspire services: service discovery, resilience, health checks, and OpenTelemetry.
 // This project should be referenced by each service project in your solution.
 // To learn more about using this project, see https://aka.ms/dotnet/aspire/service-defaults
 public static class Extensions
 {
+
     public static IHostApplicationBuilder AddServiceDefaults(this IHostApplicationBuilder builder)
     {
         builder.ConfigureOpenTelemetry();
@@ -43,28 +49,53 @@ public static class Extensions
 
     public static IHostApplicationBuilder ConfigureOpenTelemetry(this IHostApplicationBuilder builder)
     {
+        Action<OtlpExporterOptions> configureOtlpExporter = options =>
+        {
+            options.Protocol = OtlpExportProtocol.HttpProtobuf;
+        };
         builder.Logging.AddOpenTelemetry(logging =>
         {
             logging.IncludeFormattedMessage = true;
             logging.IncludeScopes = true;
         });
 
-        builder.Services.AddOpenTelemetry()
+        builder.Services.AddOpenTelemetry().ConfigureResource(resource =>
+            {
+                resource.AddService(builder.Environment.ApplicationName)
+                    .AddAttributes(new Dictionary<string, object>
+                    {
+                        { "service.name", builder.Environment.ApplicationName },
+                        { "service.version", builder.Environment.EnvironmentName ?? "1.0.0" },
+                        { "service.instance.id", Environment.MachineName }
+                    });
+            })
             .WithMetrics(metrics =>
             {
                 metrics.AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddRuntimeInstrumentation();
+                    .AddRuntimeInstrumentation()
+                    .AddConsoleExporter()
+                    .AddOtlpExporter(configureOtlpExporter);
             })
             .WithTracing(tracing =>
             {
+                tracing.AddConsoleExporter();
                 tracing.AddAspNetCoreInstrumentation()
-                    // Uncomment the following line to enable gRPC instrumentation (requires the OpenTelemetry.Instrumentation.GrpcNetClient package)
-                    //.AddGrpcClientInstrumentation()
-                    .AddHttpClientInstrumentation();
+                    .AddHttpClientInstrumentation()
+                    .AddEntityFrameworkCoreInstrumentation()
+                    .AddConsoleExporter()
+                    .AddOtlpExporter(configureOtlpExporter);
             });
 
         builder.AddOpenTelemetryExporters();
+        builder.Logging.AddOpenTelemetry(options =>
+        {
+            // See appsettings.json "Logging:OpenTelemetry" section for configuration.
+            var resourceBuilder = ResourceBuilder.CreateDefault();
+            options.SetResourceBuilder(resourceBuilder);
+            // options.AddConsoleExporter();
+            options.AddOtlpExporter(configureOtlpExporter);
+        });
 
         return builder;
     }

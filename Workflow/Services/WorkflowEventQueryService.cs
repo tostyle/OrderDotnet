@@ -116,12 +116,9 @@ public class WorkflowEventQueryService : IWorkflowEventQueryService
         {
             if (index >= allEvents.Count)
                 return null;
-
             var currentEvent = allEvents[index];
-            if (currentEvent.EventType == EventType.WorkflowTaskCompleted)
-                return currentEvent;
-
-            return FindWorkflowCompletedEvent(index + 1);
+            var isWorkflowTaskCompleted = currentEvent.EventType == EventType.WorkflowTaskCompleted;
+            return isWorkflowTaskCompleted ? currentEvent : FindWorkflowCompletedEvent(index + 1);
         };
         var scheduledEventIndex = eventList.FindIndex(e =>
             e.EventType == EventType.ActivityTaskScheduled &&
